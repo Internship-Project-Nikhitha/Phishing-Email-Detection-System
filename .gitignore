@@ -1,11 +1,2 @@
-__pycache__/
-.pytest_cache/
-.venv/
-venv/
-data/
-artifacts/
-*.joblib
-*.pkl
-*.npy
-*.npz
-*.parquet
+# Created by pytest automatically.
+*
