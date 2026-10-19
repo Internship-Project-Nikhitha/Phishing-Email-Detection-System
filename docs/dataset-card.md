@@ -1,128 +1,287 @@
-# Dataset Card: Phishing Email Detection System
+# Dataset Card: Phishing Email Detection Baseline
 
-**Status: draft (Day 1).** No dataset has been selected or downloaded yet. Every
-item marked **PENDING** must be filled in from verified information before any
-data is used. Nothing in this card describes real results.
+## 1. Dataset Title and Status
 
-## 1. Project purpose and intended use
+**Title:** Phishing Email Detection (Cyber Cop Kaggle CSV; Hugging Face mirror `zefang-liu/phishing-email-dataset`).
 
-- **Purpose:** support an internship project that will classify emails as
-  `phishing` or `legitimate`.
-- **Intended use of the data (planned):** training and evaluating a phishing
-  email classifier for learning and research.
-- **Not intended for:** making security decisions about real mailboxes without
-  further validation, or identifying or profiling individuals.
+**Status:** Candidate selected for conditional research use. The project repository does not include or redistribute the dataset. Dataset download, actual file values, data-quality statistics, and underlying email-content rights are **Pending verification**.
 
-## 2. Required schema and label definitions
+## 2. Project Purpose and Intended Use
 
-Each record is a dictionary with these fields:
+The intended task is a baseline binary classifier over email text: phishing versus legitimate/safe. This is for research, education, and evaluation of text-classification methods. It is not a mail gateway, security control, legal determination, or guarantee that an email is safe. Human review and layered defenses remain necessary.
 
-| Field     | Type   | Required?                              | Description                        |
-|-----------|--------|----------------------------------------|------------------------------------|
-| `subject` | string | Optional                               | Email subject text                 |
-| `body`    | string | Optional                               | Email body text                    |
-| `sender`  | string | Optional                               | Sender address or identifier       |
-| `label`   | string | **Required**                           | `phishing` or `legitimate`         |
+## 3. Dataset Source and Official URL
 
-At least one of `subject` or `body` must contain text.
+- Kaggle source page: https://www.kaggle.com/datasets/subhajournal/phishingemails
+- Public Hugging Face copy/card: https://huggingface.co/datasets/zefang-liu/phishing-email-dataset
+- HF CSV file listing: https://huggingface.co/datasets/zefang-liu/phishing-email-dataset/tree/main
 
-**Label definitions (working definitions, to be checked against the chosen dataset's own labeling guidelines):**
+The mirror says it is a direct copy of the Kaggle dataset. Kaggle may require an account to download. The HF repository metadata reports that it is public and not gated.
 
-- `phishing`: an email that tries to deceive the recipient, for example into
-  revealing credentials or personal data, opening a malicious link or
-  attachment, or sending money.
-- `legitimate`: a genuine email with no deceptive or malicious intent.
+## 4. Publisher and Citation
 
-**Accepted label spellings** (normalized by the code): `phishing`, `phish`, `phishing email`, `malicious`, and `1` for phishing; `legitimate`, `legit`, `ham`, `safe`, `safe email`, `benign`, and `0` for legitimate. Matching ignores case and surrounding whitespace. Spaces, underscores (`_`), and hyphens (`-`) between letters or digits are treated as separators, so `Safe_Email` and `safe-email` both match `safe email`. Integer labels `1` and `0` are also accepted. Other labels, including `spam`, are rejected. Spam is not automatically assumed to be phishing.
+The Kaggle page attributes the upload to Cyber Cop (`subhajournal`). The mirror says the dataset was originally created by that Kaggle user. The original email collector, acquisition methodology, and author-level provenance are **unknown** in reviewed source descriptions.
 
-## 3. Dataset source and licensing
+No DOI or formal citation requirement was found. Attribute Cyber Cop and the Kaggle source page; when using the mirror, also cite `zefang-liu/phishing-email-dataset` and disclose that it is a copy. Preserve the license notices and changes when sharing permitted derivatives.
 
-| Item                      | Status                       |
-|---------------------------|------------------------------|
-| Dataset name and source   | **PENDING** (not selected)   |
-| Download location / date  | **PENDING**                  |
-| License                   | **PENDING**                  |
-| License verification      | **PENDING**                  |
-| Terms of use / redistribution rules | **PENDING**        |
-| Dataset size (records)    | **PENDING**                  |
-| Class distribution        | **PENDING**                  |
-| Time period covered       | **PENDING**                  |
-| Original labeling method  | **PENDING**                  |
+## 5. License and Usage Conditions
 
-No dataset may be added to the repository or used for training until the source
-and license are verified and recorded here.
+Kaggle displays **GNU Lesser General Public License 3.0**; the Hugging Face card and repository metadata also declare `lgpl-3.0`. The LGPL-3.0 license generally permits commercial use, modification, and redistribution under its conditions. License confidence for the uploader's declaration is **medium**. Authority to license all underlying message text, personal data, and third-party content is **unknown**; the dataset description does not establish original collection rights. A public download is not proof that every email may legally be redistributed or used commercially.
 
-## 4. Data cleaning and preprocessing
+Do not redistribute dataset rows or use them commercially until the source and rights status of the embedded messages have been reviewed. Seek permission or qualified legal guidance if those rights are material to the project. No dataset file is committed here.
 
-**Implemented in Day 1 (per individual record, in `src/preprocessing.py`):**
+## 6. Access and Download Instructions
 
-- Check that the record is a dictionary with a usable `subject` or `body`.
-- Treat missing or `None` optional fields as empty strings.
-- Normalize whitespace (runs of spaces, tabs, and newlines become one space;
-  ends are trimmed). Punctuation and URLs are left unchanged.
-- Normalize the label to `phishing` or `legitimate`, and reject unknown labels.
-- Reject records with no usable content or no valid label, with an error message.
+Download `Phishing_Email.csv` from the Kaggle source or public HF files page and save it locally as `data/Phishing_Email.csv`. Do not put credentials in repository configuration. Kaggle can require sign-in; do not bypass access controls. No automatic downloader is enabled.
 
-**Planned, not implemented:** dataset-level cleaning, removal of duplicates,
-handling of encodings and HTML, and any feature extraction. These will be
-decided after the dataset is chosen and inspected.
+After dependencies are installed, inspect only the label column and counts:
 
-## 5. Privacy and safe-handling considerations
+```powershell
+python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', usecols=['Email Type'])['Email Type'].value_counts(dropna=False).to_dict())"
+```
 
-- Email datasets may contain real names, addresses, phone numbers, account
-  details, or other personal data. Check what the chosen dataset contains and
-  whether it has been anonymized (**PENDING**).
-- Do not commit raw data containing personal information to the repository.
-- Do not include credentials, secrets, or real personal emails in code, tests,
-  or documentation. Tests use fictional content and reserved example domains.
-- **URLs and attachments in phishing emails can be dangerous.** URLs are kept
-  as plain text only. Code must never open, fetch, or resolve them, and people
-  working with the data should not click links or open attachments.
-- Share only what the dataset license and privacy review allow.
+Use the exact label values observed in that command. Do not infer them from file names or transform arbitrary unknown values.
 
-## 6. Potential class imbalance, duplicates, bias, and limitations
+## 7. Dataset Version or Retrieval Date
 
-These are risks to check once a dataset is chosen. They are not findings.
+Hugging Face revision reported by the dataset API: `34085a032c123ca237f314a01a67909cdea35e34`, last modified 2024-01-17. Dataset retrieval date for this project: **Pending verification** (no corpus downloaded). This card's source review date is 2026-10-18.
 
-- **Class imbalance:** phishing and legitimate emails may not be equally
-  represented. Class distribution is **PENDING**. Accuracy alone can be
-  misleading if one class dominates.
-- **Duplicates and near-duplicates:** the same or very similar emails may appear
-  many times (templates, mass mailings, forwarded copies). They can inflate
-  results if they appear in more than one data split.
-- **Source bias:** emails from one organization, time period, language, or
-  collection method may not represent other real-world email.
-- **Label quality:** labels may be noisy or assigned by an unknown process.
-- **Changing threats:** phishing tactics change over time, so older data may
-  not reflect current attacks.
-- **Content limits:** the schema keeps only subject, body, sender, and label.
-  Headers, attachments, HTML structure, and links' real destinations are not
-  represented.
+## 8. Dataset Size
 
-## 7. Planned train/validation/test separation and leakage prevention
+The Hugging Face API reports 18,650 records in one `train` split. File size is reported as about 52 MB. The downloaded file's record count and checksum are **Pending verification**. Per-label counts, missing rows, duplicate rows, and retained rows are **Pending verification**; do not treat the total as a cleaned-data count.
 
-**Planned only. No splitting has been implemented.**
+## 9. File Format and Schema
 
-- Split the data into separate training, validation, and test sets before any
-  model tuning, with the test set kept untouched until final evaluation.
-- Remove duplicates and near-duplicates before splitting, so the same email
-  cannot appear in more than one set.
-- Fit any preprocessing or vocabulary only on training data, then apply it to
-  the validation and test sets.
-- Consider keeping related emails (same sender or campaign) together in one
-  split, if the dataset provides enough information.
-- If the data has timestamps, consider splitting by time to better mimic real use.
-- Use stratified splits or another documented method so each set keeps a
-  similar label balance. Record the split method and random seed.
+Hugging Face metadata reports a CSV with:
 
-## 8. Status summary
+| Source column | Reported type | Meaning stated by source |
+|---|---|---|
+| `Unnamed: 0` | integer | Meaning not documented; do not assume it is a stable ID. |
+| `Email Text` | string | Email body/text. Kaggle describes this as the email body. |
+| `Email Type` | string | Email type, described conceptually as Phishing or Safe. |
 
-| Item                                  | Status                |
-|---------------------------------------|-----------------------|
-| Schema and label definitions          | Defined (Day 1)       |
-| Per-record preprocessing functions    | Implemented (Day 1)   |
-| Dataset selection                     | **PENDING**           |
-| Source and license verification       | **PENDING**           |
-| Dataset size and class distribution   | **PENDING**           |
-| Duplicate and bias analysis           | Not started           |
-| Train/validation/test split           | Planned, not started  |
+Actual CSV header and data shape: **Pending verification**. The source does not document header fields, structured raw email headers, attachments, campaign/source IDs, or timestamps. The implementation requires explicit source-to-canonical column mapping.
+
+## 10. Label Definitions and Mapping
+
+The Kaggle description says `Email Type` distinguishes Phishing from Safe. The Hugging Face card marks the dataset for text classification but does not specify raw label tokens or a detailed annotation rubric.
+
+| Canonical label | Source concept | Exact stored source label |
+|---|---|---|
+| `phishing` | Phishing email | **Pending verification** by inspecting only `Email Type` values. |
+| `legitimate` | Safe email | **Pending verification** by inspecting only `Email Type` values. |
+
+The training CLI requires both exact values, and the loader maps only explicitly configured labels. No assumption is made that `spam`, `ham`, `safe`, numeric values, or any guessed spelling is equivalent.
+
+## 11. Data Collection and Provenance
+
+The Kaggle uploader says the data contains email text and type; the HF card says its file is a direct copy of the Kaggle dataset. Original source mailboxes, collection dates, sampling frame, labelers, labeling protocol, and email authenticity are **unknown** from these descriptions. Provenance must not be described as independently verified.
+
+## 12. Preprocessing and Cleaning
+
+The repository loader reads CSV/JSON/JSONL; requires explicit column and label mappings; preserves original source columns, source labels, and source filename; normalizes configured label strings by trim/casefold; rejects missing or blank text, unknown/missing labels, malformed non-string text, and exact text duplicated with conflicting labels; and removes exact duplicate text when enabled. It does not strip URLs, HTML, headers, or email indicators. Invalid-row reports contain source row and reason only, not message content.
+
+No dataset-specific cleaning has been run. Cleaning counts are **Pending verification** after manual download.
+
+## 13. Data-Quality Checks
+
+The loader summary reports input/output counts, missing/empty text, malformed text, unknown labels, conflicting duplicates, exact duplicates, and label distribution. `src/data/validate_dataset.py` reports empty rows, duplicate rows, class counts/imbalance, train/test exact duplicate contamination when splits are supplied, optional group overlap, and row counts with email-address, URL, IPv4, phone-like, and HTML indicators. It preserves the text and does not emit contents.
+
+These are risk indicators, not a proof of safe data, clean annotations, no near-duplicates, or absence of PII. Exact checks do not identify paraphrases or unknown campaign/source overlap.
+
+## 14. Class Distribution
+
+Source-reported total: 18,650. Per-class source counts and cleaned class distribution: **Pending verification**. Run the label-only inspection in Section 6, followed by the validator. Do not infer class balance from the total.
+
+## 15. Privacy and Security Considerations
+
+Email bodies may contain personal names, addresses, phone numbers, account identifiers, quoted conversations, signatures, and other sensitive content. URLs can lead to malicious or tracking resources. Email headers, if present in a downloaded variant, can reveal senders, recipients, routing, or authentication metadata. The dataset source does not document a privacy review or redaction process.
+
+Treat all text and URLs as untrusted. Do not open links, fetch remote resources, execute attachments, or send email text to external services. Do not print full rows or commit samples. The project only counts common sensitive indicators; these checks are incomplete and do not de-identify data.
+
+## 16. Known Biases and Limitations
+
+- The exact source population, time span, language, collection procedure, and class balance are not fully documented; HF metadata tags English but no language audit is available.
+- Labels have no published annotation protocol or measured inter-annotator agreement in reviewed source descriptions.
+- Data may contain stale patterns, duplicates, source/campaign artifacts, and unintended distribution shortcuts.
+- A text-only model may miss sender/domain authentication, rendered HTML behavior, attachments, and context, while learning superficial words or formatting.
+- A random split may overstate generalization if messages share campaigns, sources, senders, or time periods.
+- A baseline cannot guarantee detection of every phishing email or absence of false positives/negatives.
+
+Dataset-specific duplicate, missing-value, and class-imbalance rates: **Pending verification**.
+
+## 17. Intended and Out-of-Scope Uses
+
+Intended: reproducible academic/educational binary text-classification experiments, subject to license/privacy review.
+
+Out of scope: production blocking decisions without independent validation; sole-factor account, employment, or law-enforcement decisions; claims of comprehensive phishing detection; testing against live mail systems; contacting addresses or opening links found in the data; and redistribution without rights review.
+
+## 18. Train/Test Split Methodology
+
+The baseline uses a seeded 80/20 random split (`random_state=42` by default) and stratifies when each class has at least two examples. Pass `--group-column` for group-held-out splitting when a verified source or campaign identifier is available. Exact duplicate removal occurs before splitting, and the audit can report exact cross-split overlap. The current source schema documents no group or time column, so campaign/source/time independence cannot be established. A random split is not a temporal or source-generalization test.
+
+## 19. Reproducibility Instructions
+
+Follow [README setup and execution instructions](../README.md). Record the dataset source, source revision/version, retrieval date, checksum, exact label strings, loader summary, and split seed in experiment records. Do not record private message bodies. Run tests with `python -m pytest -q`.
+
+## 20. Ethical and Legal Considerations
+
+Use the minimum data necessary, protect local files, restrict access, and remove unnecessary copies. Review applicable privacy, copyright, and dataset terms before processing, publication, or commercial use. LGPL-3.0 on a Kaggle/HF upload does not establish consent or authority over every included message. The project provides no legal advice.
+
+## 21. Candidate Datasets Considered and Reasons for Selection
+
+See [dataset-research.md](dataset-research.md) for the source-by-source comparison. This Kaggle/HF dataset is selected conditionally because it has both stated phishing/safe classes, an explicit declared license, published schema, a reported record count, and easy CSV access. Akilesh G A's Kaggle CSV is a possible alternative with an Apache 2.0 declaration, but its schema, exact labels, count, and provenance are not available in the reviewed metadata. The Naser Alam CC BY-SA 4.0 aggregate is not selected because it conflates some spam with phishing and combines sources with unresolved label and rights compatibility. Nazario is phishing-only; SpamAssassin is spam/ham, not phishing/safe, and leaves sender copyright in place; Enron has no target labels, no explicit license, and significant privacy concerns. None of the three Kaggle listings has fully verified original rights and label quality; ask for permission or further evidence before commercial use or redistribution. The project does not combine these sources.
+
+## 22. References and Attribution
+
+- Cyber Cop, [Phishing Email Detection, Kaggle](https://www.kaggle.com/datasets/subhajournal/phishingemails).
+- `zefang-liu`, [phishing-email-dataset, Hugging Face](https://huggingface.co/datasets/zefang-liu/phishing-email-dataset), revision `34085a032c123ca237f314a01a67909cdea35e34`.
+- [Dataset metadata API](https://huggingface.co/api/datasets/zefang-liu/phishing-email-dataset).
+- Akilesh G A, [Email Phishing Legitimate classifier, Kaggle](https://www.kaggle.com/datasets/akileshga/email-phishing-legitimate-classifier).
+- Naser Abdullah Alam, [Phishing Email Dataset, Kaggle](https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset), including its cited [arXiv paper](https://arxiv.org/abs/2405.11619).
+- Jose Nazario, [Phishing Corpus](https://monkey.org/~jose/phishing/) and its [CC BY 4.0 license](https://monkey.org/~jose/phishing/LICENSE.txt).
+- Apache SpamAssassin, [Public Mail Corpus](https://spamassassin.apache.org/old/publiccorpus/) and [README](https://spamassassin.apache.org/old/publiccorpus/readme.html).
+- William W. Cohen / CALO, [Enron Email Dataset](https://www.cs.cmu.edu/~enron/).# Dataset Card: Phishing Email Detection Baseline
+
+## 1. Dataset Title and Status
+
+**Title:** Phishing Email Detection (Cyber Cop Kaggle CSV; Hugging Face mirror `zefang-liu/phishing-email-dataset`).
+
+**Status:** Candidate selected for conditional research use. The project repository does not include or redistribute the dataset. Dataset download, actual file values, data-quality statistics, and underlying email-content rights are **Pending verification**.
+
+## 2. Project Purpose and Intended Use
+
+The intended task is a baseline binary classifier over email text: phishing versus legitimate/safe. This is for research, education, and evaluation of text-classification methods. It is not a mail gateway, security control, legal determination, or guarantee that an email is safe. Human review and layered defenses remain necessary.
+
+## 3. Dataset Source and Official URL
+
+- Kaggle source page: https://www.kaggle.com/datasets/subhajournal/phishingemails
+- Public Hugging Face copy/card: https://huggingface.co/datasets/zefang-liu/phishing-email-dataset
+- HF CSV file listing: https://huggingface.co/datasets/zefang-liu/phishing-email-dataset/tree/main
+
+The mirror says it is a direct copy of the Kaggle dataset. Kaggle may require an account to download. The HF repository metadata reports that it is public and not gated.
+
+## 4. Publisher and Citation
+
+The Kaggle page attributes the upload to Cyber Cop (`subhajournal`). The mirror says the dataset was originally created by that Kaggle user. The original email collector, acquisition methodology, and author-level provenance are **unknown** in reviewed source descriptions.
+
+No DOI or formal citation requirement was found. Attribute Cyber Cop and the Kaggle source page; when using the mirror, also cite `zefang-liu/phishing-email-dataset` and disclose that it is a copy. Preserve the license notices and changes when sharing permitted derivatives.
+
+## 5. License and Usage Conditions
+
+Kaggle displays **GNU Lesser General Public License 3.0**; the Hugging Face card and repository metadata also declare `lgpl-3.0`. The LGPL-3.0 license generally permits commercial use, modification, and redistribution under its conditions. License confidence for the uploader's declaration is **medium**. Authority to license all underlying message text, personal data, and third-party content is **unknown**; the dataset description does not establish original collection rights. A public download is not proof that every email may legally be redistributed or used commercially.
+
+Do not redistribute dataset rows or use them commercially until the source and rights status of the embedded messages have been reviewed. Seek permission or qualified legal guidance if those rights are material to the project. No dataset file is committed here.
+
+## 6. Access and Download Instructions
+
+Download `Phishing_Email.csv` from the Kaggle source or public HF files page and save it locally as `data/Phishing_Email.csv`. Do not put credentials in repository configuration. Kaggle can require sign-in; do not bypass access controls. No automatic downloader is enabled.
+
+After dependencies are installed, inspect only the label column and counts:
+
+```powershell
+python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', usecols=['Email Type'])['Email Type'].value_counts(dropna=False).to_dict())"
+```
+
+Use the exact label values observed in that command. Do not infer them from file names or transform arbitrary unknown values.
+
+## 7. Dataset Version or Retrieval Date
+
+Hugging Face revision reported by the dataset API: `34085a032c123ca237f314a01a67909cdea35e34`, last modified 2024-01-17. Dataset retrieval date for this project: **Pending verification** (no corpus downloaded). This card's source review date is 2026-10-18.
+
+## 8. Dataset Size
+
+The Hugging Face API reports 18,650 records in one `train` split. File size is reported as about 52 MB. The downloaded file's record count and checksum are **Pending verification**. Per-label counts, missing rows, duplicate rows, and retained rows are **Pending verification**; do not treat the total as a cleaned-data count.
+
+## 9. File Format and Schema
+
+Hugging Face metadata reports a CSV with:
+
+| Source column | Reported type | Meaning stated by source |
+|---|---|---|
+| `Unnamed: 0` | integer | Meaning not documented; do not assume it is a stable ID. |
+| `Email Text` | string | Email body/text. Kaggle describes this as the email body. |
+| `Email Type` | string | Email type, described conceptually as Phishing or Safe. |
+
+Actual CSV header and data shape: **Pending verification**. The source does not document header fields, structured raw email headers, attachments, campaign/source IDs, or timestamps. The implementation requires explicit source-to-canonical column mapping.
+
+## 10. Label Definitions and Mapping
+
+The Kaggle description says `Email Type` distinguishes Phishing from Safe. The Hugging Face card marks the dataset for text classification but does not specify raw label tokens or a detailed annotation rubric.
+
+| Canonical label | Source concept | Exact stored source label |
+|---|---|---|
+| `phishing` | Phishing email | **Pending verification** by inspecting only `Email Type` values. |
+| `legitimate` | Safe email | **Pending verification** by inspecting only `Email Type` values. |
+
+The training CLI requires both exact values, and the loader maps only explicitly configured labels. No assumption is made that `spam`, `ham`, `safe`, numeric values, or any guessed spelling is equivalent.
+
+## 11. Data Collection and Provenance
+
+The Kaggle uploader says the data contains email text and type; the HF card says its file is a direct copy of the Kaggle dataset. Original source mailboxes, collection dates, sampling frame, labelers, labeling protocol, and email authenticity are **unknown** from these descriptions. Provenance must not be described as independently verified.
+
+## 12. Preprocessing and Cleaning
+
+The repository loader reads CSV/JSON/JSONL; requires explicit column and label mappings; preserves original source columns, source labels, and source filename; normalizes configured label strings by trim/casefold; rejects missing or blank text, unknown/missing labels, malformed non-string text, and exact text duplicated with conflicting labels; and removes exact duplicate text when enabled. It does not strip URLs, HTML, headers, or email indicators. Invalid-row reports contain source row and reason only, not message content.
+
+No dataset-specific cleaning has been run. Cleaning counts are **Pending verification** after manual download.
+
+## 13. Data-Quality Checks
+
+The loader summary reports input/output counts, missing/empty text, malformed text, unknown labels, conflicting duplicates, exact duplicates, and label distribution. `src/data/validate_dataset.py` reports empty rows, duplicate rows, class counts/imbalance, train/test exact duplicate contamination when splits are supplied, optional group overlap, and row counts with email-address, URL, IPv4, phone-like, and HTML indicators. It preserves the text and does not emit contents.
+
+These are risk indicators, not a proof of safe data, clean annotations, no near-duplicates, or absence of PII. Exact checks do not identify paraphrases or unknown campaign/source overlap.
+
+## 14. Class Distribution
+
+Source-reported total: 18,650. Per-class source counts and cleaned class distribution: **Pending verification**. Run the label-only inspection in Section 6, followed by the validator. Do not infer class balance from the total.
+
+## 15. Privacy and Security Considerations
+
+Email bodies may contain personal names, addresses, phone numbers, account identifiers, quoted conversations, signatures, and other sensitive content. URLs can lead to malicious or tracking resources. Email headers, if present in a downloaded variant, can reveal senders, recipients, routing, or authentication metadata. The dataset source does not document a privacy review or redaction process.
+
+Treat all text and URLs as untrusted. Do not open links, fetch remote resources, execute attachments, or send email text to external services. Do not print full rows or commit samples. The project only counts common sensitive indicators; these checks are incomplete and do not de-identify data.
+
+## 16. Known Biases and Limitations
+
+- The exact source population, time span, language, collection procedure, and class balance are not fully documented; HF metadata tags English but no language audit is available.
+- Labels have no published annotation protocol or measured inter-annotator agreement in reviewed source descriptions.
+- Data may contain stale patterns, duplicates, source/campaign artifacts, and unintended distribution shortcuts.
+- A text-only model may miss sender/domain authentication, rendered HTML behavior, attachments, and context, while learning superficial words or formatting.
+- A random split may overstate generalization if messages share campaigns, sources, senders, or time periods.
+- A baseline cannot guarantee detection of every phishing email or absence of false positives/negatives.
+
+Dataset-specific duplicate, missing-value, and class-imbalance rates: **Pending verification**.
+
+## 17. Intended and Out-of-Scope Uses
+
+Intended: reproducible academic/educational binary text-classification experiments, subject to license/privacy review.
+
+Out of scope: production blocking decisions without independent validation; sole-factor account, employment, or law-enforcement decisions; claims of comprehensive phishing detection; testing against live mail systems; contacting addresses or opening links found in the data; and redistribution without rights review.
+
+## 18. Train/Test Split Methodology
+
+The baseline uses a seeded 80/20 random split (`random_state=42` by default) and stratifies when each class has at least two examples. Pass `--group-column` for group-held-out splitting when a verified source or campaign identifier is available. Exact duplicate removal occurs before splitting, and the audit can report exact cross-split overlap. The current source schema documents no group or time column, so campaign/source/time independence cannot be established. A random split is not a temporal or source-generalization test.
+
+## 19. Reproducibility Instructions
+
+Follow [README setup and execution instructions](../README.md). Record the dataset source, source revision/version, retrieval date, checksum, exact label strings, loader summary, and split seed in experiment records. Do not record private message bodies. Run tests with `python -m pytest -q`.
+
+## 20. Ethical and Legal Considerations
+
+Use the minimum data necessary, protect local files, restrict access, and remove unnecessary copies. Review applicable privacy, copyright, and dataset terms before processing, publication, or commercial use. LGPL-3.0 on a Kaggle/HF upload does not establish consent or authority over every included message. The project provides no legal advice.
+
+## 21. Candidate Datasets Considered and Reasons for Selection
+
+See [dataset-research.md](dataset-research.md) for the source-by-source comparison. This Kaggle/HF dataset is selected conditionally because it has both stated phishing/safe classes, an explicit declared license, published schema, a reported record count, and easy CSV access. Akilesh G A's Kaggle CSV is a possible alternative with an Apache 2.0 declaration, but its schema, exact labels, count, and provenance are not available in the reviewed metadata. The Naser Alam CC BY-SA 4.0 aggregate is not selected because it conflates some spam with phishing and combines sources with unresolved label and rights compatibility. Nazario is phishing-only; SpamAssassin is spam/ham, not phishing/safe, and leaves sender copyright in place; Enron has no target labels, no explicit license, and significant privacy concerns. None of the three Kaggle listings has fully verified original rights and label quality; ask for permission or further evidence before commercial use or redistribution. The project does not combine these sources.
+
+## 22. References and Attribution
+
+- Cyber Cop, [Phishing Email Detection, Kaggle](https://www.kaggle.com/datasets/subhajournal/phishingemails).
+- `zefang-liu`, [phishing-email-dataset, Hugging Face](https://huggingface.co/datasets/zefang-liu/phishing-email-dataset), revision `34085a032c123ca237f314a01a67909cdea35e34`.
+- [Dataset metadata API](https://huggingface.co/api/datasets/zefang-liu/phishing-email-dataset).
+- Akilesh G A, [Email Phishing Legitimate classifier, Kaggle](https://www.kaggle.com/datasets/akileshga/email-phishing-legitimate-classifier).
+- Naser Abdullah Alam, [Phishing Email Dataset, Kaggle](https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset), including its cited [arXiv paper](https://arxiv.org/abs/2405.11619).
+- Jose Nazario, [Phishing Corpus](https://monkey.org/~jose/phishing/) and its [CC BY 4.0 license](https://monkey.org/~jose/phishing/LICENSE.txt).
+- Apache SpamAssassin, [Public Mail Corpus](https://spamassassin.apache.org/old/publiccorpus/) and [README](https://spamassassin.apache.org/old/publiccorpus/readme.html).
+- William W. Cohen / CALO, [Enron Email Dataset](https://www.cs.cmu.edu/~enron/).
