@@ -1,170 +1,66 @@
-# Phishing Email Detection System
+# Phishing Email Detection
 
-A cybersecurity internship project that will eventually classify emails as
-`phishing` or `legitimate`. The project is built in small milestones.
-
-## Current scope: Day 1 only
-
-This repository currently contains **only** the foundation for checking and
-cleaning individual email records:
-
-- an email record format (`subject`, `body`, `sender`, `label`)
-- label normalization to `phishing` or `legitimate`
-- whitespace cleanup that keeps punctuation and URLs intact
-- clear validation errors for bad input
-- automated tests (pytest) for the above
-- a dataset card that records what is still unknown about the data
-
-Nothing else exists yet. There is **no** dataset, dataset loader, train/validation/test
-split, machine-learning model, feature engineering, API, dashboard, database,
-or email upload feature.
-
-## Expected input format
-
-One email record is a Python dictionary:
-
-| Field     | Required?                             | Meaning                                  |
-|-----------|---------------------------------------|------------------------------------------|
-| `subject` | Optional                              | Email subject text                       |
-| `body`    | Optional                              | Email body text                          |
-| `sender`  | Optional                              | Sender address or identifier             |
-| `label`   | **Required**                          | Class label (see below)                  |
-
-Rules:
-
-- At least one of `subject` or `body` must contain text (after whitespace is
-  cleaned). A `sender` alone is not enough.
-- A missing or `None` optional field becomes an empty string `""`.
-- Text fields must be strings. Other types (numbers, lists, ...) are rejected.
-- Extra keys are ignored.
-
-### Supported label variations
-
-Matching ignores upper/lower case and surrounding spaces, and treats `_` and `-`
-between words like a space (so `Safe_Email` works, but `-1` does not become `1`).
-
-| Normalized label | Accepted variations                                                 |
-|------------------|---------------------------------------------------------------------|
-| `phishing`       | `phishing`, `phish`, `phishing email`, `malicious`, `1`, `1` (int)  |
-| `legitimate`     | `legitimate`, `legit`, `ham`, `safe`, `safe email`, `benign`, `0`, `0` (int) |
-
-Any other label (for example `spam`, `suspicious`, `2`) is rejected with an
-error instead of being guessed. Booleans (`True`/`False`) are also rejected.
-
-### Output format
-
-`preprocess_email()` returns a new dictionary with exactly four string fields:
-`subject`, `body`, `sender`, `label`. Text fields have their whitespace
-normalized; `label` is `"phishing"` or `"legitimate"`.
-
-## Safe handling of URLs
-
-Emails in phishing datasets can contain malicious links. This code treats URLs as
-plain text only: it never opens, fetches, or resolves them. When you extend this
-project, keep it that way, and never click links from dataset emails.
-
-## Prerequisites
-
-- Python 3.11 or newer
-- `pip` (included with Python)
-
-Check your version:
-
-```
-python --version
-```
-
-On Windows you can also use the launcher: `py -3.11 --version`. If `python` is
-not found on Linux/macOS, use `python3` instead.
+A small research baseline for binary email-text classification. The project keeps source labels explicit, preserves useful indicators such as URLs and HTML, and reports data-quality checks without printing email contents.
 
 ## Setup
 
-Run these commands from the project's root folder (the one containing this
-`README.md`).
-
-**1. Create a virtual environment**
-
-```
-python -m venv .venv
-```
-
-**2. Activate it**
-
-- Windows (PowerShell): `.venv\Scripts\Activate.ps1`
-- Windows (Command Prompt): `.venv\Scripts\activate.bat`
-- Linux / macOS: `source .venv/bin/activate`
-
-If PowerShell blocks the script, run
-`Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned` and try again.
-
-**3. Install dependencies**
-
-```
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 ```
 
-The only dependency is `pytest`.
+## Dataset
 
-## Run the tests
+Read [the dataset research](docs/dataset-research.md) and [the dataset card](docs/dataset-card.md) before downloading or using any corpus. No dataset, email sample, or trained artifact is included in this repository. The current candidate is the Kaggle `Phishing Email Detection` dataset mirrored on Hugging Face. Its mirror advertises LGPL-3.0, but rights in the source email content and original collection lineage have not been independently established. Do not redistribute the data unless you have confirmed the applicable rights.
 
-```
-python -m pytest
-```
+Download the CSV from [the Hugging Face repository](https://huggingface.co/datasets/zefang-liu/phishing-email-dataset/tree/main) or Kaggle and place it at `data/Phishing_Email.csv`. The Kaggle download may require an account. Confirm the CSV's label values locally before choosing mappings; the inspection below prints only labels and counts, never email text:
 
-Add `-v` for a test-by-test listing: `python -m pytest -v`.
-
-## Quick example
-
-Start Python from the project root (`python`) and try:
-
-```python
-from src.preprocessing import preprocess_email, preprocess_emails
-
-preprocess_email({
-    "subject": "  Verify   your account ",
-    "body": "Log in at http://login.example.invalid/verify?id=1 today.",
-    "label": "Phish",
-})
-# {'subject': 'Verify your account',
-#  'body': 'Log in at http://login.example.invalid/verify?id=1 today.',
-#  'sender': '',
-#  'label': 'phishing'}
-
-result = preprocess_emails([
-    {"subject": "Hi", "body": "Lunch?", "label": "ham"},
-    {"subject": "Hi", "body": "Hello", "label": "spam"},
-])
-len(result.valid)   # 1
-result.errors[0]    # RecordError(index=1, message="Unknown label 'spam'. ...")
+```powershell
+python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', usecols=['Email Type'])['Email Type'].value_counts(dropna=False).to_dict())"
 ```
 
-## Project layout
+## Validate and Train
 
+Use the exact source label strings observed above. The Kaggle description defines the concepts as Phishing and Safe, but exact stored values must be verified against the downloaded file:
+
+```powershell
+python -m src.data.validate_dataset data/Phishing_Email.csv `
+  --text-column "Email Text" --label-column "Email Type" `
+  --phishing-label "<exact phishing label>" `
+  --legitimate-label "<exact safe label>"
+
+python -m src.train data/Phishing_Email.csv `
+  --text-column "Email Text" --label-column "Email Type" `
+  --phishing-label "<exact phishing label>" `
+  --legitimate-label "<exact safe label>" `
+  --output artifacts/phishing_baseline.joblib
 ```
-README.md
-requirements.txt
-src/
-    __init__.py
-    preprocessing.py      # validation + preprocessing functions
-tests/
-    test_preprocessing.py # pytest tests
-docs/
-    dataset-card.md       # dataset documentation (many fields still pending)
+
+Replace the angle-bracketed arguments with the exact values shown by the label inspection. If records have a documented source or campaign field, supply it as `--group-column <column>` to hold groups out of the test set. The default random stratified split does not establish independence across source, campaign, sender, or time.
+
+## Check One Email
+
+After training, classify one local UTF-8 text file without printing the email contents:
+
+```powershell
+python -m src.predict artifacts/phishing_baseline.joblib --text-file .\email.txt
 ```
 
-## Current limitations
+Or pipe text from a local source through stdin:
 
-- Works on in-memory Python dictionaries only; it does not read files.
-- Only whitespace is normalized. HTML is not stripped, and invisible characters
-  such as zero-width spaces are not removed.
-- Line breaks become single spaces, so paragraph structure is not kept.
-- The sender is not checked for being a valid email address.
-- The list of label variations is small and fixed. Datasets that use other label
-  names will need those names mapped explicitly later.
-- No duplicate detection, language detection, or other dataset-level checks.
+```powershell
+Get-Content -Raw .\email.txt | python -m src.predict artifacts/phishing_baseline.joblib
+```
 
-## Next planned milestone (not started)
+The command prints only `phishing` or `legitimate` (plus a joblib trust warning on stderr). Input remains local; the command does not open URLs or execute attachments. Do not load model artifacts from untrusted sources: joblib deserialization can execute code. This baseline prediction is not a guarantee that an email is safe.
 
-Choose a candidate dataset, verify its source and license, and fill in the
-pending sections of `docs/dataset-card.md`. Dataset loading, splitting, and any
-modeling come after that and are not part of Day 1.
+The loader accepts CSV, JSON, and JSONL, and requires explicit source-label mappings. Invalid-row reports contain source row numbers and reasons only. The audit reports empty rows, labels, duplicates, imbalance, exact split contamination, group overlap (when a group column is supplied), and counts of email addresses, URLs, IPv4 strings, phone-like strings, and HTML. These checks are indicators, not guarantees of privacy, representativeness, or leakage-free evaluation.
+
+Run tests with:
+
+```powershell
+python -m pytest -q
+```
+
+The scikit-learn TF-IDF/logistic-regression pipeline is a baseline, not a production phishing detector. Only load model artifacts that you created or otherwise trust; joblib/pickle-based formats can execute code when deserialized.
