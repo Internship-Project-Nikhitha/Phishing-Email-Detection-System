@@ -285,3 +285,6 @@ See [dataset-research.md](dataset-research.md) for the source-by-source comparis
 - Jose Nazario, [Phishing Corpus](https://monkey.org/~jose/phishing/) and its [CC BY 4.0 license](https://monkey.org/~jose/phishing/LICENSE.txt).
 - Apache SpamAssassin, [Public Mail Corpus](https://spamassassin.apache.org/old/publiccorpus/) and [README](https://spamassassin.apache.org/old/publiccorpus/readme.html).
 - William W. Cohen / CALO, [Enron Email Dataset](https://www.cs.cmu.edu/~enron/).
+
+
+Observed source labels: Phishing Email and Safe Email. Every unique label in the downloaded file must still be verified.
