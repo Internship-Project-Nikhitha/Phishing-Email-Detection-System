@@ -28,11 +28,25 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _SEPARATOR = "\x1f"  # keeps subject and body from running together
 
 
+
 def _parts(record: dict[str, Any]) -> tuple[str, str]:
-    """Return (subject, body) of a record, treating missing values as ''."""
+    """Return (subject, body), treating missing or None values as empty."""
     if not isinstance(record, dict):
         raise TypeError(f"Record must be a dict, got {type(record).__name__}.")
-    return str(record.get("subject") or ""), str(record.get("body") or "")
+
+    parts = []
+    for field in ("subject", "body"):
+        value = record.get(field)
+        if value is None:
+            value = ""
+        if not isinstance(value, str):
+            raise TypeError(
+                f"Field '{field}' must be a string, got {type(value).__name__}."
+            )
+        parts.append(value)
+
+    return parts[0], parts[1]
+
 
 
 def _digest(text: str) -> str:
