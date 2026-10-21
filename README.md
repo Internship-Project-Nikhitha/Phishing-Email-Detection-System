@@ -14,15 +14,21 @@ python -m pip install -r requirements.txt
 
 Read [the dataset research](docs/dataset-research.md) and [the dataset card](docs/dataset-card.md) before downloading or using any corpus. No dataset, email sample, or trained artifact is included in this repository. The current candidate is the Kaggle `Phishing Email Detection` dataset mirrored on Hugging Face. Its mirror advertises LGPL-3.0, but rights in the source email content and original collection lineage have not been independently established. Do not redistribute the data unless you have confirmed the applicable rights.
 
-Download the CSV from [the Hugging Face repository](https://huggingface.co/datasets/zefang-liu/phishing-email-dataset/tree/main) or Kaggle and place it at `data/Phishing_Email.csv`. The Kaggle download may require an account. Confirm the CSV's label values locally before choosing mappings; the inspection below prints only labels and counts, never email text:
+Download the CSV from [the Hugging Face repository](https://huggingface.co/datasets/zefang-liu/phishing-email-dataset/tree/main) or Kaggle and place it at `data/Phishing_Email.csv`. The Kaggle download may require an account. First inspect the header without reading message contents:
+
+```powershell
+python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', nrows=0).columns.tolist())"
+```
+
+## Validate and Train
+
+If the confirmed header includes `Email Type`, inspect its exact stored values and counts without printing email text:
 
 ```powershell
 python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', usecols=['Email Type'])['Email Type'].value_counts(dropna=False).to_dict())"
 ```
 
-## Validate and Train
-
-Use the exact source label strings observed above. The Kaggle description defines the concepts as Phishing and Safe, but exact stored values must be verified against the downloaded file:
+The source metadata describes an email-type field but does not define its exact labels or establish that they mean phishing versus legitimate. Counts reveal stored values, not their meanings. Confirm class semantics and applicable rights before training; do not map labels based on guessed spellings. When the class meanings are confirmed, use the exact source label strings:
 
 ```powershell
 python -m src.data.validate_dataset data/Phishing_Email.csv `
