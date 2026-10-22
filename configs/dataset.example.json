@@ -1,0 +1,16 @@
+{
+  "path": "data/emails.csv",
+  "columns": {
+    "subject": "Subject",
+    "body": "Body",
+    "sender": "Sender",
+    "label": "Label"
+  },
+  "label_map": {
+    "Phishing Email": "phishing",
+    "Legitimate Email": "legitimate"
+  },
+  "delimiter": ",",
+  "encoding": "utf-8-sig",
+  "max_rows": null
+}
