@@ -1,0 +1,13 @@
+{
+  "name": "example-email-dataset",
+  "path": "data/emails.csv",
+  "format": "csv",
+  "encoding": "utf-8",
+  "text_columns": [
+    "subject",
+    "body"
+  ],
+  "label_column": "label",
+  "positive_label": "phishing",
+  "negative_label": "legitimate"
+}
