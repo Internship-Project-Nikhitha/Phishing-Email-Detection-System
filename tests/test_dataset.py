@@ -91,4 +91,80 @@ def test_example_config_in_repo_is_valid():
     assert config.columns["label"] == "Label"
     assert config.label_map["Phishing Email"] == "phishing"
 
+def test_load_dataset_reads_and_preprocesses_csv(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text(
+        "Subject,Body,Sender,Label\n"
+        '" Urgent offer "," Click here ","sender@example.com",Phishing Email\n'
+        '"Meeting","See you tomorrow","colleague@example.com",Legitimate Email\n',
+        encoding="utf-8",
+    )
 
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={
+            "subject": "Subject",
+            "body": "Body",
+            "sender": "Sender",
+            "label": "Label",
+        },
+        label_map={
+            "Phishing Email": "phishing",
+            "Legitimate Email": "legitimate",
+        },
+    )
+
+    result = ds.load_dataset(config)
+
+    assert result.errors == []
+    assert len(result.valid) == 2
+    assert result.valid[0]["subject"] == "Urgent offer"
+    assert result.valid[0]["label"] == "phishing"
+    assert result.valid[1]["label"] == "legitimate"
+
+
+def test_load_dataset_rejects_missing_configured_columns(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text("Subject,Label\nHello,phishing\n", encoding="utf-8")
+
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    with pytest.raises(ds.DatasetError, match="missing configured columns"):
+        ds.load_dataset(config)
+
+
+def test_load_dataset_rejects_empty_csv(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text("Subject,Body,Label\n", encoding="utf-8")
+
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    with pytest.raises(ds.DatasetError, match="no data rows"):
+        ds.load_dataset(config)
+
+
+def test_load_dataset_applies_max_rows(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text(
+        "Subject,Body,Label\n"
+        "First,First body,phishing\n"
+        "Second,Second body,legitimate\n",
+        encoding="utf-8",
+    )
+
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+        max_rows=1,
+    )
+
+    result = ds.load_dataset(config)
+
+    assert len(result.valid) == 1
+    assert result.valid[0]["subject"] == "First"

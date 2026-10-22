@@ -5,12 +5,13 @@ configuration file. CSV row loading and preprocessing are separate steps.
 """
 
 import codecs
+import csv
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
+from src.preprocessing import BatchResult, preprocess_emails
 
 COLUMN_FIELDS = ("subject", "body", "sender", "label")
 LABEL_TARGETS = ("phishing", "legitimate")
@@ -133,4 +134,80 @@ def load_config(config_path: str | Path) -> DatasetConfig:
         raise DatasetError(f"Config file {path} is not valid JSON: {error}") from error
     return parse_config(data)
 
+def load_dataset(
+    config: DatasetConfig | str | Path,
+    *,
+    base_dir: str | Path | None = None,
+) -> BatchResult:
+    """Load a configured CSV file and preprocess its email records."""
+    if not isinstance(config, DatasetConfig):
+        config = load_config(config)
 
+    path = Path(config.path)
+    if not path.is_absolute() and base_dir is not None:
+        path = Path(base_dir) / path
+
+    if not path.is_file():
+        raise DatasetError(f"Dataset file not found: {path}")
+
+    records = []
+    label_map = {
+        raw.strip().casefold(): target
+        for raw, target in config.label_map.items()
+    }
+
+    try:
+        with path.open("r", encoding=config.encoding, newline="") as handle:
+            reader = csv.DictReader(handle, delimiter=config.delimiter, strict=True)
+
+            if not reader.fieldnames:
+                raise DatasetError("Dataset CSV has no header row.")
+
+            if len(reader.fieldnames) != len(set(reader.fieldnames)):
+                raise DatasetError("Dataset CSV contains duplicate column names.")
+
+            missing = sorted(set(config.columns.values()) - set(reader.fieldnames))
+            if missing:
+                raise DatasetError(
+                    f"Dataset CSV is missing configured columns: {missing}"
+                )
+
+            rows_read = 0
+
+            for row_number, row in enumerate(reader, start=2):
+                if None in row:
+                    raise DatasetError(
+                        f"Dataset row {row_number} has more values than the header."
+                    )
+
+                if all(value is None or not value.strip() for value in row.values()):
+                    continue
+
+                if config.max_rows is not None and rows_read >= config.max_rows:
+                    break
+
+                rows_read += 1
+                record = {
+                    field: row.get(config.columns[field], "")
+                    for field in ("subject", "body", "sender")
+                    if field in config.columns
+                }
+                record["label"] = row.get(config.columns["label"], "")
+
+                raw_label = record["label"]
+                if isinstance(raw_label, str):
+                    record["label"] = label_map.get(
+                        raw_label.strip().casefold(), raw_label
+                    )
+
+                records.append(record)
+
+    except DatasetError:
+        raise
+    except (OSError, UnicodeError, csv.Error) as error:
+        raise DatasetError(f"Could not read dataset file {path}: {error}") from error
+
+    if not records:
+        raise DatasetError("Dataset CSV contains no data rows.")
+
+    return preprocess_emails(records)
