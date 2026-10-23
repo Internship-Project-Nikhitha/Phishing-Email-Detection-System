@@ -2,9 +2,9 @@
 
 ## 1. Dataset Title and Status
 
-**Title:** Phishing Email Detection (Cyber Cop Kaggle CSV; Hugging Face mirror `zefang-liu/phishing-email-dataset`).
+**Title:** MeAJOR: Merged email Assets from Joint Open-source Repositories.
 
-**Status:** Recommended only as a conditional candidate for local research. The project repository does not include or redistribute the dataset. The public source metadata and declared license were checked, but the CSV itself was not downloaded or audited. Exact headers and label values, annotation quality, data-quality statistics, and the uploader's authority over the underlying email content remain **Pending verification**. Do not train on or redistribute the corpus until the label meanings and applicable rights have been confirmed.
+**Status:** Recommended as the leading candidate for a local, non-production baseline, subject to verifying that its `benign` class is acceptable as this project's `legitimate` class and reviewing the upstream source-corpus terms. The project repository does not include or redistribute the dataset. The official Zenodo record and license metadata were checked, and the CSV header was read using an HTTP byte-range request; no email rows were inspected or retained. Actual class counts, annotation quality, duplicates, and source-level reuse rights remain **Pending verification**.
 
 ## 2. Project Purpose and Intended Use
 
@@ -12,82 +12,92 @@ The intended task is a baseline binary classifier over email text: phishing vers
 
 ## 3. Dataset Source and Official URL
 
-- Kaggle source page: https://www.kaggle.com/datasets/subhajournal/phishingemails
-- Public Hugging Face copy/card: https://huggingface.co/datasets/zefang-liu/phishing-email-dataset
-- HF CSV file listing: https://huggingface.co/datasets/zefang-liu/phishing-email-dataset/tree/main
+- Official Zenodo record (version 2.0): https://zenodo.org/records/18471483
+- Zenodo record API metadata: https://zenodo.org/api/records/18471483
+- Paper: Cardoso et al., *MeAJOR Corpus: A Multi-Source Dataset for Phishing Email Detection*: https://arxiv.org/abs/2507.17978
+- CSV file: `meajor_cleaned_preprocessed.csv` on the Zenodo record.
 
-The mirror says it is a direct copy of the Kaggle dataset. Kaggle may require an account to download. The HF repository metadata reports that it is public and not gated.
+Zenodo describes an open dataset from GECAD, ISEP, Polytechnic of Porto, assembled from TREC-05, TREC-06, TREC-07, the Nazario Phishing Corpus, and Nigerian Fraud. The record offers CSV and compressed Parquet files. This card recommends the CSV because its header can be mapped directly to the project's text-and-label loader; the source recommends Parquet for more efficient querying and compression.
 
 ## 4. Publisher and Citation
 
-The Kaggle API attributes the upload to Cyber Cop (`subhajournal`); its current metadata reports version 1, last updated 2023-07-06. The Hugging Face card says it is a direct copy of that Kaggle dataset and identifies Cyber Cop as the original Kaggle uploader. These statements establish the uploader/mirror chain only, not the original email collector, acquisition methodology, or author-level provenance; those remain **unknown** in the reviewed source descriptions.
+The Zenodo record names Francisco Cardoso, João Vitorino, Paulo Mendes, Eva Maia, and Isabel Praça as creators and identifies GECAD, ISEP, Polytechnic of Porto. The record describes the five source corpora but does not give a record-level provenance map for each email. Cite the dataset record and paper when using it. The paper's cited source records should also be credited where required.
 
-No DOI or formal citation requirement was found. Attribute Cyber Cop and the Kaggle source page; when using the mirror, also cite `zefang-liu/phishing-email-dataset` and disclose that it is a copy. Preserve the license notices and changes when sharing permitted derivatives.
+Suggested citation: Cardoso, F., Vitorino, J., Mendes, P., Maia, E., & Praça, I. (2026). *MeAJOR: Merged email Assets from Joint Open-source Repositories* (Version 2.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.18471483. Include the article citation listed in the References section when appropriate.
 
 ## 5. License and Usage Conditions
 
-Kaggle metadata displays **GNU Lesser General Public License 3.0**; the Hugging Face card and repository metadata also declare `lgpl-3.0`. This documents the uploader's license declaration, not an independently verified grant from the email authors or other rights holders. LGPL-3.0 is written for a covered work defined as a library; its applicability to this collection of email messages, including third-party content and personal data, is **unclear**. The source descriptions do not establish the uploader's authority to license all embedded material. Do not assume that the declaration alone authorizes commercial use or redistribution; obtain rights clarification or qualified legal advice first. A public download is not proof of permission.
+Zenodo record metadata declares **Creative Commons Attribution 4.0 International (CC BY 4.0)**. The license permits sharing and adaptation, including commercially, when its terms are followed: provide appropriate attribution, link to the license, indicate changes, and do not imply endorsement. However, the record aggregates messages from five upstream corpora. Its CC BY declaration does not by itself establish that every upstream message or third-party right is covered by that grant. Review the upstream terms and any privacy/publicity rights before reuse, especially redistribution or commercial use. Public access is not a substitute for that review.
 
-Do not redistribute dataset rows or use them commercially until the source and rights status of the embedded messages have been reviewed. Seek permission or qualified legal guidance if those rights are material to the project. No dataset file is committed here.
+No dataset file is committed here. Preserve attribution and license notices for any permitted use; seek rights clarification or qualified legal advice if upstream rights are material.
 
 ## 6. Access and Download Instructions
 
-Download `Phishing_Email.csv` from the Kaggle source or public HF files page and save it locally as `data/Phishing_Email.csv`. Do not put credentials in repository configuration. Kaggle can require sign-in; do not bypass access controls. No automatic downloader is enabled.
+Download `meajor_cleaned_preprocessed.csv` from the [official Zenodo record](https://zenodo.org/records/18471483) and save it locally as `data/meajor_cleaned_preprocessed.csv`. The published CSV is about 191 MB; the record also offers a compressed Parquet file. Do not put credentials in repository configuration. No automatic downloader is enabled.
 
-After dependencies are installed, inspect the header only (not message contents):
-
-```powershell
-python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', nrows=0).columns.tolist())"
-```
-
-Only after confirming the label column from the header, inspect its values and counts, for example if the column is actually named `Email Type`:
+After dependencies are installed, you can check the CSV header without reading its email rows:
 
 ```powershell
-python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', usecols=['Email Type'])['Email Type'].value_counts(dropna=False).to_dict())"
+python -c "import pandas as pd; print(pd.read_csv('data/meajor_cleaned_preprocessed.csv', nrows=0).columns.tolist())"
 ```
 
-This reveals stored tokens, not their meaning. Use the exact values only after independently confirming what each label means. Do not infer class semantics from file names or guessed label spellings.
+The official CSV header was independently verified on 2026-10-23 using an HTTP range request that read only the first line. To inspect the stored label counts locally without printing messages:
+
+```powershell
+python -c "import pandas as pd; print(pd.read_csv('data/meajor_cleaned_preprocessed.csv', usecols=['label'])['label'].value_counts(dropna=False).to_dict())"
+```
+
+Counts reveal stored values, not their accuracy. The Zenodo record says `0 = benign` and `1 = phishing`; check that the source's benign category meets the project's intended definition of legitimate/non-phishing before mapping labels or training. Do not print or commit email text.
 
 ## 7. Dataset Version or Retrieval Date
 
-Hugging Face revision reported by its dataset API: `34085a032c123ca237f314a01a67909cdea35e34`, last modified 2024-01-17. Kaggle metadata reports version 1, last updated 2023-07-06. Dataset retrieval date for this project: **Not applicable; no corpus downloaded**. Source metadata was reviewed on 2026-10-21.
+Zenodo record: version 2.0, published February 2026; record API metadata last modified 2026-02-03. Dataset retrieval date for this project: **Not applicable; no corpus downloaded**. Source metadata and CSV header were reviewed on 2026-10-23.
 
 ## 8. Dataset Size
 
-Hugging Face dataset-viewer metadata reports one `train` split with 18,650 rows and three columns; its repository API reports `Phishing_Email.csv` at 52,034,604 bytes. These are mirror metadata, not an independent audit of the source archive. The downloaded file's record count and checksum are **Pending verification**. Per-label counts, missing rows, duplicate rows, and retained rows are **Pending verification**; do not treat the total as a cleaned-data count.
+The Zenodo record reports 108,685 samples. Its API lists a CSV file of 191,121,228 bytes (MD5 `aa8f59e96787cbd696c0b650e5400dc9`) and a compressed Parquet file of 86,278,230 bytes (MD5 `78e397ad8447bcdba5a98097921ba8bd`). The paper abstract reports 135,894 samples, which conflicts with the 108,685 samples reported by the version 2.0 Zenodo release; the reason for this difference is **unknown**. These are publisher statements, not an independent file audit. The actual row count and checksum, per-label counts, missing rows, duplicate rows, and retained rows are **Pending verification**; do not treat either reported total as a cleaned-data count.
 
 ## 9. File Format and Schema
 
-The Hugging Face mirror contains one CSV, `Phishing_Email.csv`, and its dataset-viewer metadata reports three columns. The dataset descriptions characterize the contents as email body text and email type, but do not publish exact field names in the source descriptions. The following column names have been reported for this dataset, but must be checked against the authorized CSV before use:
+The Zenodo release contains CSV and compressed Parquet files. The official CSV header was checked without reading message rows; it contains these 20 columns:
 
-| Source column | Reported type | Meaning stated by source |
+| Source column | Type/meaning |
 |---|---|---|
-| `Unnamed: 0` | integer (reported) | Meaning not documented; do not assume it is a stable ID. |
-| `Email Text` | string (reported) | Email body/text; Kaggle describes the data as email text body. |
-| `Email Type` | string (reported) | Email type; Kaggle's metadata does not specify exact stored values. |
+| `sender`, `sender_domain` | Sender address and domain; represented in an anonymized corpus. |
+| `receiver`, `receiver_domain` | Recipient address and domain; represented in an anonymized corpus. |
+| `date` | Message date; exact type/format not audited. |
+| `subject` | Subject text. |
+| `content_types` | Content-type information; exact encoding not audited. |
+| `body` | Email body text; use as the project's text column. |
+| `urls` | URL data; exact encoding not audited. |
+| `url_count`, `url_length_max`, `url_length_avg`, `url_subdom_max`, `url_subdom_avg` | URL-related features, as named in the header. |
+| `attachment_count`, `has_attachments`, `attachment_types` | Attachment-related fields, as named in the header; do not retrieve or execute attachments. |
+| `language` | Language field; values and reliability not audited. |
+| `source` | Source-corpus field; values and mapping not audited. |
+| `label` | Numeric class field; the Zenodo record defines 0 as benign and 1 as phishing. |
 
-Actual CSV header and field types: **Pending verification from the file**. The source descriptions do not document structured raw email headers, attachments, campaign/source IDs, or timestamps. The implementation requires explicit source-to-canonical column mapping; use the reported names only if they are present in the downloaded version.
+Header fields were verified by requesting bytes 0-2047 and reading the first CSV line only. Detailed field types, value formats, completeness, and whether every row is anonymized remain **Pending verification** from a local metadata-only audit. Do not assume `source` is a campaign identifier or that its values fully capture provenance.
 
 ## 10. Label Definitions and Mapping
 
-The Kaggle title is *Phishing Email Detection*, and its description says the dataset contains email body text and an email type for machine-learning classification. The reviewed Kaggle metadata does **not** specify exact stored label tokens, a complete definition of the non-phishing class, or an annotation rubric. The Hugging Face card marks it for text classification but likewise does not provide those details. Thus the source metadata alone is insufficient to verify that its two labels mean phishing versus legitimate email.
+The Zenodo record explicitly defines `0 = benign` and `1 = phishing`. It does not provide a detailed annotation rubric, adjudication procedure, label-error rate, or a definition establishing that every benign email is legitimate rather than merely non-phishing or spam. Accordingly, `1` maps to the project's phishing label as documented by the source; map `0` to project `legitimate` only if that broader semantic equivalence is acceptable and recorded for the experiment.
 
 | Canonical label | Source concept | Exact stored source label |
 |---|---|---|
-| `phishing` | Supposed phishing category | **Unverified**; requires authoritative label documentation and local review. |
-| `legitimate` | Supposed safe/non-phishing category | **Unverified**; requires authoritative label documentation and local review. |
+| `phishing` | Phishing | `1` (documented by Zenodo) |
+| `legitimate` | Benign/non-phishing | `0` (documented as `benign`; equivalence to legitimate needs project acceptance) |
 
 Inspecting the label column and counts can reveal the tokens but cannot establish what those tokens mean. Do not map labels to the project's binary targets based only on a token name or guessed spelling. The training CLI requires exact configured source values, and the loader does not infer mappings; confirm both class meanings before training. In particular, do not assume that spam, ham, safe, numeric values, or any guessed spelling is equivalent to phishing/legitimate.
 
 ## 11. Data Collection and Provenance
 
-The Kaggle uploader describes email body text and a type field; the HF card says its file is a direct copy. Original source mailboxes, collection dates, sampling frame, labelers, labeling protocol, label correctness, and email authenticity are **unknown** from these descriptions. Provenance must not be described as independently verified.
+Zenodo says the corpus combines TREC-05, TREC-06, TREC-07, the Nazario Phishing Corpus, and Nigerian Fraud. It describes the messages as anonymized by entity removal, replacing detected entities with bracketed tokens (for example `[EMAIL_ADDRESS]`, `[URL]`, `[NAME]`, and `[PHONE_NUMBER]`). This is the publisher's description, not an independent privacy audit. Source-level message provenance, original collection dates, sampling and deduplication methods, labelers, annotation quality, and the consistency of the `source` field are **Pending verification**.
 
 ## 12. Preprocessing and Cleaning
 
 The repository loader reads CSV/JSON/JSONL; requires explicit column and label mappings; preserves original source columns, source labels, and source filename; normalizes configured label strings by trim/casefold; rejects missing or blank text, unknown/missing labels, malformed non-string text, and exact text duplicated with conflicting labels; and removes exact duplicate text when enabled. It does not strip URLs, HTML, headers, or email indicators. Invalid-row reports contain source row and reason only, not message content.
 
-No dataset-specific cleaning has been run. Cleaning counts are **Pending verification** after manual download.
+The corpus is described as preprocessed, engineered, and anonymized. No dataset-specific cleaning or privacy audit has been run by this project. Do not assume upstream preprocessing makes the data free of personal information or suitable for all uses. Project cleaning counts are **Pending verification** after authorized local inspection.
 
 ## 13. Data-Quality Checks
 
@@ -97,18 +107,22 @@ These are risk indicators, not a proof of safe data, clean annotations, no near-
 
 ## 14. Class Distribution
 
-Mirror-reported total: 18,650. Per-class source counts and cleaned class distribution: **Pending verification**. Run the label-only inspection in Section 6, then the validator, and confirm label semantics separately. Do not infer class balance from the total.
+Publisher-reported total: 108,685 in the Zenodo v2.0 record and 135,894 in the paper abstract; the discrepancy is unresolved. Per-class source counts and cleaned class distribution: **Pending verification**. Run the label-only inspection in Section 6, then the validator. Do not infer class balance from either total.
 
 ## 15. Privacy and Security Considerations
 
-Email bodies may contain personal names, addresses, phone numbers, account identifiers, quoted conversations, signatures, and other sensitive content. URLs can lead to malicious or tracking resources. Email headers, if present in a downloaded variant, can reveal senders, recipients, routing, or authentication metadata. The dataset source does not document a privacy review or redaction process.
+Although the publisher says it applied entity removal, email bodies and structured fields may retain personal or sensitive information, quoted conversations, signatures, and malicious or tracking URLs. The CSV header includes sender, recipient, date, URL, and attachment-related fields. The source record does not establish that anonymization is complete or that privacy risks have been independently reviewed.
 
 Treat all text and URLs as untrusted. Do not open links, fetch remote resources, execute attachments, or send email text to external services. Do not print full rows or commit samples. The project only counts common sensitive indicators; these checks are incomplete and do not de-identify data.
 
 ## 16. Known Biases and Limitations
 
-- The exact source population, time span, language, collection procedure, and class balance are not fully documented; HF metadata tags English, but no language audit is available.
-- Exact class meanings, annotation protocol, and measured inter-annotator agreement are not documented in the reviewed metadata; source-label semantics need verification before this can be treated as a phishing/legitimate dataset.
+- The dataset aggregates historical corpora and its exact source-level population, sampling, language distribution, and time coverage have not been independently verified.
+- The paper abstract reports 135,894 samples, while the Zenodo v2.0 record reports 108,685; this count discrepancy is unresolved.
+- The publisher's `benign` label is not defined in enough detail to prove it means legitimate email rather than non-phishing/spam; annotation protocol and measured agreement are not reported in the record.
+- The five-source description and the `source` column need to be reconciled against actual values and source records; cross-source or campaign coverage cannot be inferred from the schema alone.
+- Anonymization can remove identity cues that real-world phishing systems may use; it may also be incomplete or introduce artifacts.
+- The record includes engineered URL and attachment-related fields; exclude them if the experiment is intended to evaluate body text only, and check for target leakage before using any engineered feature.
 - Data may contain stale patterns, duplicates, source/campaign artifacts, and unintended distribution shortcuts.
 - A text-only model may miss sender/domain authentication, rendered HTML behavior, attachments, and context, while learning superficial words or formatting.
 - A random split may overstate generalization if messages share campaigns, sources, senders, or time periods.
@@ -124,28 +138,26 @@ Out of scope: production blocking decisions without independent validation; sole
 
 ## 18. Train/Test Split Methodology
 
-The baseline uses a seeded 80/20 random split (`random_state=42` by default) and stratifies when each class has at least two examples. Pass `--group-column` for group-held-out splitting when a verified source or campaign identifier is available. Exact duplicate removal occurs before splitting, and the audit can report exact cross-split overlap. The current source schema documents no group or time column, so campaign/source/time independence cannot be established. A random split is not a temporal or source-generalization test.
+The baseline uses a seeded 80/20 random split (`random_state=42` by default) and stratifies when each class has at least two examples. This schema includes `source`, which may be suitable for a group-held-out split only after its values and meanings are verified; pass `--group-column source` only after that check. Exact duplicate removal occurs before splitting, and the audit can report exact cross-split overlap. A random split is not a temporal or source-generalization test.
 
 ## 19. Reproducibility Instructions
 
-Follow [README setup and execution instructions](../README.md). Record the dataset source, source revision/version, retrieval date, checksum, exact label strings, loader summary, and split seed in experiment records. Do not record private message bodies. Run tests with `python -m pytest -q`.
+Follow [README setup and execution instructions](../README.md). Record the Zenodo DOI and version, retrieval date, checksum, exact label mapping (`1` to phishing; `0` to benign, if accepted as legitimate), loader summary, and split seed in experiment records. Do not record private message bodies. Run tests with `python -m pytest -q`.
 
 ## 20. Ethical and Legal Considerations
 
-Use the minimum data necessary, protect local files, restrict access, and remove unnecessary copies. Review applicable privacy, copyright, and dataset terms before processing, publication, or commercial use. LGPL-3.0 on a Kaggle/HF upload does not establish consent or authority over every included message. The project provides no legal advice.
+Use the minimum data necessary, protect local files, restrict access, and remove unnecessary copies. Review applicable privacy, copyright, and dataset terms before processing, publication, or commercial use. A CC BY 4.0 declaration on an aggregate release does not establish consent or authority over every upstream message. The project provides no legal advice.
 
 ## 21. Candidate Datasets Considered and Reasons for Selection
 
-See [dataset-research.md](dataset-research.md) for the source-by-source comparison. The Kaggle/HF CSV is the preferred *candidate to investigate locally*, not a verified ready-to-use phishing/legitimate corpus: it has a declared license, a public mirror, a reported row count, and descriptions of email body/type data, but exact schema and class meanings were not established from the source metadata reviewed. The LGPL declaration's applicability and authority over the embedded messages also remain unresolved. Akilesh G A's Kaggle CSV is a possible alternative with an Apache 2.0 declaration, but its schema, exact labels, count, and provenance are not available in the reviewed metadata. The Naser Alam CC BY-SA 4.0 aggregate is not selected because it conflates some spam with phishing and combines sources with unresolved label and rights compatibility. Nazario is phishing-only; SpamAssassin is spam/ham, not phishing/safe, and leaves sender copyright in place; Enron has no target labels, no explicit license, and significant privacy concerns. None of the three Kaggle listings has fully verified original rights and label quality. Do not use this recommendation for training until the dataset's labels and applicable rights have been verified; obtain permission or further evidence before commercial use or redistribution. The project does not combine these sources.
+See [dataset-research.md](dataset-research.md) and [dataset-candidates.md](dataset-candidates.md) for source comparisons. MeAJOR is recommended as the leading candidate because its official Zenodo record provides a CC BY 4.0 declaration, documented `0 = benign` and `1 = phishing` labels, a reported size, and an inspectable email-text schema. It is not an unconditional recommendation: `benign` may not mean legitimate, upstream source rights must be reviewed, and the data has not been independently audited. Do not train until the project explicitly accepts the label mapping and completes rights review. Do not claim commercial or redistribution permission for every underlying message solely from the aggregate record license. Other candidates have less suitable labels, weaker license/schema evidence, or greater integration/privacy concerns. The project does not combine these sources.
 
 ## 22. References and Attribution
 
-- Cyber Cop, [Phishing Email Detection, Kaggle](https://www.kaggle.com/datasets/subhajournal/phishingemails).
-- `zefang-liu`, [phishing-email-dataset, Hugging Face](https://huggingface.co/datasets/zefang-liu/phishing-email-dataset), revision `34085a032c123ca237f314a01a67909cdea35e34`.
-- [Dataset metadata API](https://huggingface.co/api/datasets/zefang-liu/phishing-email-dataset).
-- [Hugging Face dataset-viewer size and schema-count metadata](https://datasets-server.huggingface.co/size?dataset=zefang-liu%2Fphishing-email-dataset).
-- [Kaggle dataset metadata API](https://www.kaggle.com/api/v1/datasets/view/subhajournal/phishingemails).
-- [GNU Lesser General Public License version 3.0](https://www.gnu.org/licenses/lgpl-3.0.html).
+- Cardoso, F., Vitorino, J., Mendes, P., Maia, E., & Praça, I., [MeAJOR: Merged email Assets from Joint Open-source Repositories, Zenodo, version 2.0](https://zenodo.org/records/18471483), DOI: [10.5281/zenodo.18471483](https://doi.org/10.5281/zenodo.18471483).
+- [Zenodo record API metadata](https://zenodo.org/api/records/18471483) and [file metadata](https://zenodo.org/api/records/18471483/files).
+- Cardoso et al., [MeAJOR Corpus: A Multi-Source Dataset for Phishing Email Detection](https://arxiv.org/abs/2507.17978), arXiv:2507.17978.
+- [Creative Commons Attribution 4.0 International legal code](https://creativecommons.org/licenses/by/4.0/legalcode) and [license deed](https://creativecommons.org/licenses/by/4.0/).
 - Akilesh G A, [Email Phishing Legitimate classifier, Kaggle](https://www.kaggle.com/datasets/akileshga/email-phishing-legitimate-classifier).
 - Naser Abdullah Alam, [Phishing Email Dataset, Kaggle](https://www.kaggle.com/datasets/naserabdullahalam/phishing-email-dataset), including its cited [arXiv paper](https://arxiv.org/abs/2405.11619).
 - Jose Nazario, [Phishing Corpus](https://monkey.org/~jose/phishing/) and its [CC BY 4.0 license](https://monkey.org/~jose/phishing/LICENSE.txt).
