@@ -133,6 +133,34 @@ def test_split_dataset_rejects_empty_and_invalid_records():
         sp.split_dataset([{"subject": "", "body": "", "label": "phishing"}])
 
 
+
+def test_three_independent_duplicate_groups_populate_every_split():
+    # This distribution exposed a greedy-allocation bug: the two phishing
+    # groups could consume train/validation while the legitimate group was
+    # assigned to train, leaving test empty despite three independent groups.
+    records = []
+    for group, copies, label in (
+        (0, 7, "phishing"),
+        (1, 5, "phishing"),
+        (2, 4, "legitimate"),
+    ):
+        subject = f"unique group {word(group)} marker {word(group + 100)}"
+        body = f"body marker {word(group + 200)} unique text {word(group + 300)}"
+        records.extend(
+            {"subject": subject, "body": body, "label": label}
+            for _ in range(copies)
+        )
+
+    # Three groups cannot provide both classes in every partition here, so
+    # stratification warnings are expected; the important invariant is that
+    # none of the three partitions is empty and duplicate groups stay intact.
+    with pytest.warns(RuntimeWarning, match="contains no records for class"):
+        result = sp.split_dataset(records, random_state=19)
+
+    assert all(result.sizes()[name] > 0 for name in sp.SPLIT_NAMES)
+    assert sum(result.sizes().values()) == len(records)
+    sp.assert_no_duplicate_leakage(result)
+
 def test_split_dataset_rejects_too_small_dataset_with_clear_error():
     records = [
         {"subject": "First unique message", "body": "First independent body", "label": "phishing"},
