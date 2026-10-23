@@ -64,7 +64,12 @@ def _group_records(records: list[Record], duplicate_level: str) -> list[list[int
 def _allocate_groups(groups: list[list[int]], records: list[Record],
                      ratios: tuple[float, float, float], seed: int,
                      stratify: bool) -> list[list[int]]:
-    """Greedily allocate whole groups toward target class counts."""
+    """Greedily allocate whole groups toward target class counts.
+
+    Groups are indivisible, so this balances toward (rather than guarantees)
+    the requested ratios. A group containing more than one label is rejected
+    before any partition is assigned.
+    """
     rng = random.Random(seed)
     # Each group is represented by its class-count vector. Mixed-label groups
     # are invalid: assigning them atomically would make class stratification
@@ -92,9 +97,18 @@ def _allocate_groups(groups: list[list[int]], records: list[Record],
     target_sizes = [len(records) * ratio for ratio in ratios]
     partitions: list[list[int]] = [[], [], []]
 
-    for group, label in group_info:
-        candidates = []
-        for s in range(3):
+    for group_index, (group, label) in enumerate(group_info):
+        candidate_splits = list(range(3))
+        empty_splits = [s for s, part in enumerate(partitions) if not part]
+        groups_remaining = len(group_info) - group_index
+        # Reserve enough remaining groups to seed every empty partition. Without
+        # this guard, the greedy class-balancing score can put all groups into
+        # only one or two splits even when three independent groups exist.
+        if empty_splits and groups_remaining <= len(empty_splits):
+            candidate_splits = empty_splits
+
+        candidates = {}
+        for s in candidate_splits:
             # Prefer the partition with greatest normalized class deficit;
             # use overall size deficit as a tie-breaker.
             if stratify:
@@ -102,8 +116,8 @@ def _allocate_groups(groups: list[list[int]], records: list[Record],
                 score = class_deficit * 2 + (target_sizes[s] - sizes[s]) / max(target_sizes[s], 1)
             else:
                 score = (target_sizes[s] - sizes[s]) / max(target_sizes[s], 1)
-            candidates.append(score)
-        best = max(range(3), key=lambda s: (candidates[s], -s))
+            candidates[s] = score
+        best = max(candidate_splits, key=lambda s: (candidates[s], -s))
         partitions[best].extend(group)
         sizes[best] += len(group)
         counts[best][label] += len(group)
@@ -125,7 +139,15 @@ def split_dataset(
 
     ``duplicate_level`` is ``"exact"`` (recommended default) or ``"near"``.
     Near grouping is more conservative and may merge unrelated template-like
-    messages; review its impact and conflicting labels before enabling it.
+    messages; review its impact before enabling it. Groups are never divided
+    across partitions, and a group with conflicting labels raises ``ValueError``
+    rather than being silently assigned.
+
+    The requested ratios are targets, not guarantees: indivisible groups and
+    very small datasets can make exact proportions impossible. At least three
+    assignable groups are needed to populate all three partitions; if the
+    resulting split has an empty partition, this function raises ``ValueError``
+    instead of returning an incomplete result.
     """
     ratios = validate_ratios((train_size, validation_size, test_size))
     if isinstance(random_state, bool) or not isinstance(random_state, int):
