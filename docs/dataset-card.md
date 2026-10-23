@@ -4,7 +4,7 @@
 
 **Title:** MeAJOR: Merged email Assets from Joint Open-source Repositories.
 
-**Status:** Recommended as the leading candidate for a local, non-production baseline, subject to verifying that its `benign` class is acceptable as this project's `legitimate` class and reviewing the upstream source-corpus terms. The project repository does not include or redistribute the dataset. The official Zenodo record and license metadata were checked, and the CSV header was read using an HTTP byte-range request; no email rows were inspected or retained. Actual class counts, annotation quality, duplicates, and source-level reuse rights remain **Pending verification**.
+**Status:** MeAJOR is the leading candidate for a local, non-production baseline, subject to verifying that its `benign` class is acceptable as this project's `legitimate` class and reviewing the upstream source-corpus terms. Its official Zenodo record and license metadata were checked, and its CSV header was read using an HTTP byte-range request; no MeAJOR email rows were downloaded or inspected. A separate Cyber Cop Kaggle CSV was supplied locally and audited with the project validator; no email contents were printed, retained in project artifacts, or committed. The Kaggle copy has substantial conflicting-label duplicates and unresolved content-license authority, so it remains a comparison candidate rather than the recommendation.
 
 ## 2. Project Purpose and Intended Use
 
@@ -97,7 +97,7 @@ Zenodo says the corpus combines TREC-05, TREC-06, TREC-07, the Nazario Phishing 
 
 The repository loader reads CSV/JSON/JSONL; requires explicit column and label mappings; preserves original source columns, source labels, and source filename; normalizes configured label strings by trim/casefold; rejects missing or blank text, unknown/missing labels, malformed non-string text, and exact text duplicated with conflicting labels; and removes exact duplicate text when enabled. It does not strip URLs, HTML, headers, or email indicators. Invalid-row reports contain source row and reason only, not message content.
 
-The corpus is described as preprocessed, engineered, and anonymized. No dataset-specific cleaning or privacy audit has been run by this project. Do not assume upstream preprocessing makes the data free of personal information or suitable for all uses. Project cleaning counts are **Pending verification** after authorized local inspection.
+The MeAJOR corpus is described as preprocessed, engineered, and anonymized; no dataset-specific cleaning or privacy audit has been run on MeAJOR by this project. A separate supplied Kaggle CSV was processed locally by the project validator; its results are recorded in Section 23. Do not assume upstream preprocessing makes either corpus free of personal information or suitable for all uses.
 
 ## 13. Data-Quality Checks
 
@@ -107,7 +107,7 @@ These are risk indicators, not a proof of safe data, clean annotations, no near-
 
 ## 14. Class Distribution
 
-Publisher-reported total: 108,685 in the Zenodo v2.0 record and 135,894 in the paper abstract; the discrepancy is unresolved. Per-class source counts and cleaned class distribution: **Pending verification**. Run the label-only inspection in Section 6, then the validator. Do not infer class balance from either total.
+For MeAJOR, publisher-reported totals are 108,685 in the Zenodo v2.0 record and 135,894 in the paper abstract; the discrepancy is unresolved. Per-class source counts and cleaned distribution for MeAJOR: **Pending verification**. The distinct supplied Kaggle CSV's observed distribution is reported in Section 23. Do not transfer counts between datasets.
 
 ## 15. Privacy and Security Considerations
 
@@ -128,7 +128,7 @@ Treat all text and URLs as untrusted. Do not open links, fetch remote resources,
 - A random split may overstate generalization if messages share campaigns, sources, senders, or time periods.
 - A baseline cannot guarantee detection of every phishing email or absence of false positives/negatives.
 
-Dataset-specific duplicate, missing-value, and class-imbalance rates: **Pending verification**.
+For MeAJOR, dataset-specific duplicate, missing-value, and class-imbalance rates: **Pending verification**. The separate Kaggle CSV audit found missing text and conflicting duplicate labels; see Section 23.
 
 ## 17. Intended and Out-of-Scope Uses
 
@@ -150,7 +150,7 @@ Use the minimum data necessary, protect local files, restrict access, and remove
 
 ## 21. Candidate Datasets Considered and Reasons for Selection
 
-See [dataset-research.md](dataset-research.md) and [dataset-candidates.md](dataset-candidates.md) for source comparisons. MeAJOR is recommended as the leading candidate because its official Zenodo record provides a CC BY 4.0 declaration, documented `0 = benign` and `1 = phishing` labels, a reported size, and an inspectable email-text schema. It is not an unconditional recommendation: `benign` may not mean legitimate, upstream source rights must be reviewed, and the data has not been independently audited. Do not train until the project explicitly accepts the label mapping and completes rights review. Do not claim commercial or redistribution permission for every underlying message solely from the aggregate record license. Other candidates have less suitable labels, weaker license/schema evidence, or greater integration/privacy concerns. The project does not combine these sources.
+See [dataset-research.md](dataset-research.md) and [dataset-candidates.md](dataset-candidates.md) for source comparisons. MeAJOR remains the leading candidate because its official Zenodo record provides a CC BY 4.0 declaration, documented `0 = benign` and `1 = phishing` labels, and a verified email-text schema. It is not an unconditional recommendation: `benign` may not mean legitimate, upstream source rights must be reviewed, and the data has not been independently audited. A separate supplied Cyber Cop Kaggle CSV has more directly named label values (`Safe Email`, `Phishing Email`), but the local validator found 533 exact-text conflicts across labels, and its declared LGPL-3.0 license does not establish rights in the underlying messages. See Section 23 before considering it. The project does not combine these sources.
 
 ## 22. References and Attribution
 
@@ -163,3 +163,18 @@ See [dataset-research.md](dataset-research.md) and [dataset-candidates.md](datas
 - Jose Nazario, [Phishing Corpus](https://monkey.org/~jose/phishing/) and its [CC BY 4.0 license](https://monkey.org/~jose/phishing/LICENSE.txt).
 - Apache SpamAssassin, [Public Mail Corpus](https://spamassassin.apache.org/old/publiccorpus/) and [README](https://spamassassin.apache.org/old/publiccorpus/readme.html).
 - William W. Cohen / CALO, [Enron Email Dataset](https://www.cs.cmu.edu/~enron/).
+
+## 23. Separately Supplied Cyber Cop Kaggle CSV (Not the Recommended MeAJOR Corpus)
+
+A separate local file, `data/Phishing_Email.csv`, was available for review. The file is ignored by Git via the repository's `data/` ignore rule and is not included in the repository commit. Its 52,034,604-byte size matches the total size reported by the Kaggle dataset API, but no cryptographic checksum was available to establish file identity. Kaggle attributes the dataset to Cyber Cop (`subhajournal`), describes email body text and email type, and declares LGPL-3.0. Its metadata does not document the annotation protocol or establish the uploader's authority over all embedded messages. Review source and content rights before reuse or redistribution.
+
+The local CSV header is an empty first column (an index-like field whose meaning is undocumented), `Email Text`, and `Email Type`. The local row scan found 18,650 data rows and no blank labels:
+
+| Observed `Email Type` | Rows |
+|---|---:|
+| `Safe Email` | 11,322 |
+| `Phishing Email` | 7,328 |
+
+The project validator was run with `Email Text` as text and `Email Type` as label, mapping the exact tokens above. It reported 18,650 input rows; 19 missing/empty text rows; 533 rows whose exact text appears with conflicting labels; and 563 exact duplicate text rows removed. After its invalid-row and duplicate handling, 17,535 rows remained: 10,979 legitimate and 6,556 phishing, for a 1.67:1 class-imbalance ratio. These are results of this project's loader/validator on this local file, not publisher-certified statistics. The high conflicting-label count is a material label-quality concern; do not train on this copy until its cause and treatment have been reviewed. Do not add or commit the CSV.
+
+The validator also found rows containing email-address-like strings (2,598), URL-like strings (4,020), IPv4-like strings (153), phone-like strings (5,312), and HTML (259). These are heuristic indicators, not proof that personal information is present or absent, and do not anonymize the messages. No message text was printed or retained in the documentation. If a rights-reviewed experiment later uses this candidate, first confirm the label definitions and inspect the blank index column's purpose; for this repository's CLI, the text and label columns are `Email Text` and `Email Type`.

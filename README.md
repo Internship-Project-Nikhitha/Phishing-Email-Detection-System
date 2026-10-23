@@ -12,7 +12,7 @@ python -m pip install -r requirements.txt
 
 ## Dataset
 
-Read [the dataset research](docs/dataset-research.md), [candidate comparison](docs/dataset-candidates.md), and [dataset card](docs/dataset-card.md) before downloading or using any corpus. No dataset, email sample, or trained artifact is included in this repository. The recommended leading candidate is MeAJOR v2.0 on Zenodo. Its record declares CC BY 4.0 and documents `0 = benign`, `1 = phishing`; review upstream corpus terms and confirm that `benign` is an acceptable definition for this project's `legitimate` class before training, commercial use, or redistribution.
+Read [the dataset research](docs/dataset-research.md), [candidate comparison](docs/dataset-candidates.md), and [dataset card](docs/dataset-card.md) before downloading or using any corpus. No dataset, email sample, or trained artifact is included in this repository. The recommended leading candidate is MeAJOR v2.0 on Zenodo. Its record declares CC BY 4.0 and documents `0 = benign`, `1 = phishing`; review upstream corpus terms and confirm that `benign` is an acceptable definition for this project's `legitimate` class before training, commercial use, or redistribution. The project also reviewed a separately supplied Cyber Cop Kaggle CSV; it is not recommended for training as-is because validation found many exact-text label conflicts and its email-content rights are unresolved.
 
 Download `meajor_cleaned_preprocessed.csv` from the [official Zenodo record](https://zenodo.org/records/18471483) and place it at `data/meajor_cleaned_preprocessed.csv`. Do not commit the dataset. First inspect the header without reading message contents:
 
@@ -44,6 +44,19 @@ python -m src.train data/meajor_cleaned_preprocessed.csv `
 ```
 
 The `source` field is present in the CSV header, but inspect its values and confirm its meaning before using `--group-column source`. A group split can reduce known source overlap, but the default random stratified split does not establish independence across source, campaign, sender, or time.
+
+### If you were given `Phishing_Email.csv` instead
+
+Do not replace the repository with the ZIP contents. Extract only `Phishing_Email.csv` into `data\Phishing_Email.csv`; the `data\` folder is ignored by Git, so the email file will not be committed. The local copy reviewed for this project had columns `Email Text` and `Email Type` (plus an undocumented blank/index-like column) and labels `Safe Email` and `Phishing Email`. Kaggle declares LGPL-3.0, but rights to the original email contents and the uploader's authority are not established. The project validator also found 533 exact-text duplicates with conflicting labels. Do not train on this copy until the label conflicts and applicable rights have been reviewed. Full results are in [the dataset card](docs/dataset-card.md).
+
+If you are authorized to inspect the local file, the following command reports aggregate validation results only; it does not print email bodies:
+
+```powershell
+python -m src.data.validate_dataset data/Phishing_Email.csv `
+  --text-column "Email Text" --label-column "Email Type" `
+  --phishing-label "Phishing Email" `
+  --legitimate-label "Safe Email"
+```
 
 ## Check One Email
 
