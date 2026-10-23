@@ -74,6 +74,36 @@ def test_split_dataset_keeps_exact_duplicates_together():
             location[key] = name
 
 
+def test_split_dataset_keeps_near_duplicates_together():
+    from src.keys import near_key
+
+    records = make_records(per_label=10)
+    records.extend([
+        {
+            "subject": "Dear user 123",
+            "body": "Visit http://first.example.invalid/login/123 now!",
+            "label": "phishing",
+        },
+        {
+            "subject": "Dear user 456",
+            "body": "Visit http://second.example.invalid/login/456 now.",
+            "label": "phishing",
+        },
+    ])
+
+    result = sp.split_dataset(records, random_state=21, duplicate_level="near")
+    duplicate_key = near_key(records[-2])
+    locations = {
+        name
+        for name in sp.SPLIT_NAMES
+        for record in result.by_name(name)
+        if near_key(record) == duplicate_key
+    }
+
+    assert len(locations) == 1
+    sp.assert_no_duplicate_leakage(result, duplicate_level="near")
+
+
 def test_split_dataset_near_duplicate_conflicting_labels_fails_closed():
     records = [
         {"subject": "Dear user 123", "body": "Visit http://one.example.invalid/123", "label": "phishing"},
@@ -85,11 +115,32 @@ def test_split_dataset_near_duplicate_conflicting_labels_fails_closed():
         sp.split_dataset(records, duplicate_level="near")
 
 
+def test_split_dataset_exact_duplicates_with_conflicting_labels_fail_closed():
+    records = [
+        {"subject": "Account alert", "body": "Verify your account", "label": "phishing"},
+        {"subject": "Account alert", "body": "Verify your account", "label": "legitimate"},
+        {"subject": "Team update", "body": "Meeting is at noon", "label": "legitimate"},
+    ]
+
+    with pytest.raises(ValueError, match="conflicting labels"):
+        sp.split_dataset(records, duplicate_level="exact")
+
+
 def test_split_dataset_rejects_empty_and_invalid_records():
     with pytest.raises(ValueError, match="empty dataset"):
         sp.split_dataset([])
     with pytest.raises(ValueError, match="Invalid record at index 0"):
         sp.split_dataset([{"subject": "", "body": "", "label": "phishing"}])
+
+
+def test_split_dataset_rejects_too_small_dataset_with_clear_error():
+    records = [
+        {"subject": "First unique message", "body": "First independent body", "label": "phishing"},
+        {"subject": "Second unique message", "body": "Second independent body", "label": "legitimate"},
+    ]
+
+    with pytest.raises(ValueError, match="too small to populate all three splits"):
+        sp.split_dataset(records)
 
 
 def test_near_duplicate_leakage_assertion_detects_overlap():
@@ -100,3 +151,25 @@ def test_near_duplicate_leakage_assertion_detects_overlap():
     ])
     with pytest.raises(ValueError, match="Duplicate leakage"):
         sp.assert_no_duplicate_leakage(result, duplicate_level="near")
+
+
+def test_rare_class_missing_from_split_emits_warning():
+    records = []
+    for label, count in (("phishing", 3), ("legitimate", 97)):
+        for i in range(count):
+            text = f"Unique message {label} number {i} alpha beta"
+            records.append({
+                "subject": text,
+                "body": f"Different body content for {text}",
+                "sender": f"user{i}@example.com",
+                "label": label,
+            })
+
+    with pytest.warns(RuntimeWarning, match="contains no records for class"):
+        result = sp.split_dataset(records, random_state=42)
+
+    assert sum(
+        record["label"] == "phishing"
+        for name in sp.SPLIT_NAMES
+        for record in result.by_name(name)
+    ) == 3
