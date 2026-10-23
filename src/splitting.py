@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import math
 import random
+import warnings
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -52,7 +53,7 @@ def validate_ratios(ratios: tuple[float, float, float]) -> tuple[float, float, f
 
 
 def _group_records(records: list[Record], duplicate_level: str) -> list[list[int]]:
-    """Build transitive duplicate groups; every record belongs to one group."""
+    """Build duplicate-key groups; every record belongs to one group."""
     key_fn = key_function(duplicate_level)
     buckets: dict[str, list[int]] = {}
     for i, record in enumerate(records):
@@ -63,7 +64,12 @@ def _group_records(records: list[Record], duplicate_level: str) -> list[list[int
 def _allocate_groups(groups: list[list[int]], records: list[Record],
                      ratios: tuple[float, float, float], seed: int,
                      stratify: bool) -> list[list[int]]:
-    """Greedily allocate whole groups toward target class counts."""
+    """Greedily allocate whole groups toward target class counts.
+
+    Groups are indivisible, so this balances toward (rather than guarantees)
+    the requested ratios. A group containing more than one label is rejected
+    before any partition is assigned.
+    """
     rng = random.Random(seed)
     # Each group is represented by its class-count vector. Mixed-label groups
     # are invalid: assigning them atomically would make class stratification
@@ -74,7 +80,7 @@ def _allocate_groups(groups: list[list[int]], records: list[Record],
         if len(labels) != 1:
             raise ValueError(
                 "Duplicate group contains conflicting labels; resolve conflicting-label "
-                "duplicates before splitting (or choose duplicate_level='exact')."
+                "duplicates before splitting; exact duplicates can also have conflicting labels."
             )
         label = next(iter(labels))
         group_info.append((group, label))
@@ -98,7 +104,6 @@ def _allocate_groups(groups: list[list[int]], records: list[Record],
             # use overall size deficit as a tie-breaker.
             if stratify:
                 class_deficit = (targets[s][label] - counts[s][label]) / max(targets[s][label], 1)
-                other = 1 - class_deficit
                 score = class_deficit * 2 + (target_sizes[s] - sizes[s]) / max(target_sizes[s], 1)
             else:
                 score = (target_sizes[s] - sizes[s]) / max(target_sizes[s], 1)
@@ -125,7 +130,15 @@ def split_dataset(
 
     ``duplicate_level`` is ``"exact"`` (recommended default) or ``"near"``.
     Near grouping is more conservative and may merge unrelated template-like
-    messages; review its impact and conflicting labels before enabling it.
+    messages; review its impact before enabling it. Groups are never divided
+    across partitions, and a group with conflicting labels raises ``ValueError``
+    rather than being silently assigned.
+
+    The requested ratios are targets, not guarantees: indivisible groups and
+    very small datasets can make exact proportions impossible. At least three
+    assignable groups are needed to populate all three partitions; if the
+    resulting split has an empty partition, this function raises ``ValueError``
+    instead of returning an incomplete result.
     """
     ratios = validate_ratios((train_size, validation_size, test_size))
     if isinstance(random_state, bool) or not isinstance(random_state, int):
@@ -153,6 +166,22 @@ def split_dataset(
             "The dataset/duplicate groups are too small to populate all three splits; "
             "add more independent records or reduce the number of partitions."
         )
+    if stratify:
+        all_labels = {record["label"] for record in cleaned}
+        for split_name in SPLIT_NAMES:
+            split_labels = {
+                record["label"] for record in result.by_name(split_name)
+            }
+            missing_labels = sorted(all_labels - split_labels)
+            if missing_labels:
+                warnings.warn(
+                    f"The {split_name} split contains no records for class(es) "
+                    f"{missing_labels}; class-specific evaluation may be unreliable. "
+                    "This can happen with rare classes or duplicate groups.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+
     assert_no_duplicate_leakage(result, duplicate_level=duplicate_level)
     return result
 
