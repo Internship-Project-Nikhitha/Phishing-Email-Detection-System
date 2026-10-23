@@ -1,7 +1,7 @@
 
 import pytest
 
-from src.duplicate_detection import find_duplicate_groups
+from src.quality import find_duplicate_groups
 
 
 def make(subject="Hello", body="World", label="legitimate"):
@@ -71,3 +71,4 @@ def test_empty_records_return_no_groups():
 def test_unknown_level_raises_value_error():
     with pytest.raises(ValueError, match="Unknown key level"):
         find_duplicate_groups([make()], level="fuzzy")
+
