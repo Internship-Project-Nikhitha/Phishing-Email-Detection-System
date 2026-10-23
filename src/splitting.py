@@ -97,9 +97,18 @@ def _allocate_groups(groups: list[list[int]], records: list[Record],
     target_sizes = [len(records) * ratio for ratio in ratios]
     partitions: list[list[int]] = [[], [], []]
 
-    for group, label in group_info:
-        candidates = []
-        for s in range(3):
+    for group_index, (group, label) in enumerate(group_info):
+        candidate_splits = list(range(3))
+        empty_splits = [s for s, part in enumerate(partitions) if not part]
+        groups_remaining = len(group_info) - group_index
+        # Reserve enough remaining groups to seed every empty partition. Without
+        # this guard, the greedy class-balancing score can put all groups into
+        # only one or two splits even when three independent groups exist.
+        if empty_splits and groups_remaining <= len(empty_splits):
+            candidate_splits = empty_splits
+
+        candidates = {}
+        for s in candidate_splits:
             # Prefer the partition with greatest normalized class deficit;
             # use overall size deficit as a tie-breaker.
             if stratify:
@@ -107,8 +116,8 @@ def _allocate_groups(groups: list[list[int]], records: list[Record],
                 score = class_deficit * 2 + (target_sizes[s] - sizes[s]) / max(target_sizes[s], 1)
             else:
                 score = (target_sizes[s] - sizes[s]) / max(target_sizes[s], 1)
-            candidates.append(score)
-        best = max(range(3), key=lambda s: (candidates[s], -s))
+            candidates[s] = score
+        best = max(candidate_splits, key=lambda s: (candidates[s], -s))
         partitions[best].extend(group)
         sizes[best] += len(group)
         counts[best][label] += len(group)
