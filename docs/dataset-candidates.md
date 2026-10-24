@@ -1,6 +1,6 @@
 # Dataset candidate review
 
-This document records publicly described candidates for the phishing-email detection project. Facts below are taken from linked dataset or catalog pages. MeAJOR's Zenodo license declaration and CSV header were checked, but its corpus was not downloaded or audited. A separate Cyber Cop Kaggle CSV was supplied locally and audited without printing email content. **No candidate is currently approved for training:** MeAJOR needs source-rights clarification and documented label mapping, while the Kaggle copy has conflicting-label duplicates and unresolved content rights.
+This document records publicly described candidates for the phishing-email detection project. Facts below are taken from linked dataset or catalog pages. MeAJOR's Zenodo license declaration and CSV header were checked, but its corpus was not downloaded or audited. A separate Cyber Cop Kaggle CSV was supplied locally and audited without printing email content. **No candidate is currently approved for training:** MeAJOR's upstream rights, class mapping, and release-count discrepancy remain unresolved; the Kaggle copy has conflicting-label duplicates and unresolved content rights.
 
 ## Candidate comparison
 
@@ -12,19 +12,30 @@ This document records publicly described candidates for the phishing-email detec
 | [Phishing validation emails dataset](https://zenodo.org/records/13474746) | 2,000 emails; CSV about 203 KB | Full email text and a label: `Safe Email` or `Phishing Email`; the record says it mixes real-world and artificially generated examples. Sender/subject/body columns are not separately described. | **Unconfirmed:** the visible record does not clearly state a license. Do not use until the authors or record confirm reuse rights. | Small; intended for validating models after training, not as the main training corpus; includes synthetic examples. | **Do not select for training unless license and intended use are clarified.** |
 | [Curated Dataset - Phishing Email](https://figshare.com/articles/dataset/Curated_Dataset_-_Phishing_Email/24899952) | About 691 MB; curated from seven repositories | The page describes `Subject` and `Body` for Ling/Enron and `Sender`, `Receiver`, `Date`, `Subject`, `Body`, and `Urls` for other source files. Exact row count and label conventions need to be confirmed from the release and paper. | The Figshare page lists CC BY 4.0. Attribution is required; check underlying corpus terms and the dataset paper before use. | Large, multi-source schema differences; class meaning and row counts need inspection; duplicates and source artifacts likely need auditing. | **Backup candidate pending schema and label verification.** |
 
+## MeAJOR due-diligence outcome (2026-10-24)
+
+The Zenodo API confirms that the v2.0 record declares CC BY 4.0. It does not include a source-by-source license manifest or identify the exact Nigerian Fraud release. The NIST page links the TREC spam corpora but does not state reuse terms; the Nazario maintainer states CC BY 4.0 for that corpus. These facts do not establish permission for every email included in MeAJOR.
+
+The release labels (`0 = benign`, `1 = phishing`) are documented, but their mapping from original corpus labels is not. The paper reports 220,932 samples before cleaning and 135,894 after duplicate/empty removal; Zenodo v2.0 reports 108,685. No public explanation of the release-count difference was found. No dataset files were downloaded or inspected for this review, and no author response or legal clearance has been obtained.
+
+**Project decision: not cleared for training, redistribution, or commercial use.** Written provenance/rights confirmation, an accepted label mapping, an explanation of the count difference, and project review are prerequisites for reconsidering the decision.
+
 ## Recommended next checks
 
-1. Ask the corresponding author listed in the MeAJOR paper, or use the authors' institutional contact route, to confirm source-by-source rights, intended-use permissions, label mapping, and why the Zenodo v2.0 sample count differs from the paper's post-cleaning count. Record written answers before changing the approval status.
-2. Check the original terms for each upstream corpus. Treat MeAJOR as not cleared if any included material or intended use remains unaccounted for.
+1. Request written author clarification on the exact upstream release and reuse terms for each named source, their authority to sublicense those email contents, the original-to-MeAJOR label mapping, and the 220,932 → 135,894 paper counts versus the Zenodo v2.0 count of 108,685.
+2. Independently check the terms for each exact upstream corpus. Keep MeAJOR not cleared if any source, permission, label, or release-count question remains unanswered.
 3. Do not map `benign` to `legitimate` until the authors document what source labels comprise class 0 and the project accepts that definition.
 4. Keep the supplied Kaggle CSV out of training unless its 533 conflicting-label rows, source annotation documentation, and rights have been resolved.
-5. If use is authorized, inspect aggregate counts and quality locally without printing message contents; never open email links or attachments. Report the exact release/version and don't conflate paper and release counts.
+5. Keep MeAJOR marked **not cleared** until written evidence is received and reviewed. If eventually authorized, inspect aggregate counts and quality locally without printing message contents; never open email links or attachments. Report the exact release/version and don't conflate paper and release counts.
 
 ## Sources
 
 - MeAJOR official Zenodo record: https://zenodo.org/records/18471483
 - MeAJOR Zenodo metadata API (license and files): https://zenodo.org/api/records/18471483
 - MeAJOR paper: https://arxiv.org/abs/2507.17978
+- MeAJOR paper full text (dataset compilation and cleaning sections): https://arxiv.org/html/2507.17978v2
+- NIST TREC Spam Track page (corpus links; no reuse-license statement on the page): https://trec.nist.gov/data/spam.html
+- Nazario Phishing Corpus README (maintainer's stated license and caveats): https://monkey.org/~jose/phishing/README.txt
 - CC BY 4.0 legal code: https://creativecommons.org/licenses/by/4.0/legalcode
 - Cyber Cop Kaggle dataset metadata API: https://www.kaggle.com/api/v1/datasets/view/subhajournal/phishingemails
 - Cyber Cop Kaggle dataset page: https://www.kaggle.com/datasets/subhajournal/phishingemails
