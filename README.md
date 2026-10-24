@@ -120,6 +120,19 @@ The [dataset card](docs/dataset-card.md) records the current candidate and unres
 
 Do not invent dataset sizes, class distributions, provenance, or evaluation results.
 
+### Audit a locally approved dataset
+
+After a dataset source and label mapping have been reviewed and configured, run
+the content-safe quality audit with its JSON config:
+
+```powershell
+.\.venv312\Scripts\python.exe -m src.audit_dataset configs\dataset.json
+```
+
+The report contains counts and quality indicators only; it does not print email
+text or fetch URLs. This audit does not approve dataset rights or label
+semantics. No dataset is currently cleared for project use.
+
 ## Setup
 
 Prerequisites:
@@ -176,7 +189,7 @@ Run the complete test suite after making changes. The passing test count should 
 
 ### Latest recorded test run
 
-On 2026-10-24, the Windows command above completed with **164 passed** using Python 3.12.10 and pytest 9.1.1. Rerun the command to verify the current checkout; the test count may change as tests are added or removed. Passing software tests do not verify dataset licensing, upstream rights, or label meanings; those dataset checks remain pending in the [dataset card](docs/dataset-card.md).
+On 2026-10-25, the Windows command above completed with **168 passed** using Python 3.12.10 and pytest 9.1.1. Rerun the command to verify the current checkout; the test count may change as tests are added or removed. Passing software tests do not verify dataset licensing, upstream rights, or label meanings; those dataset checks remain pending in the [dataset card](docs/dataset-card.md).
 
 ## Example: preprocess an email
 
@@ -216,11 +229,13 @@ src/
     dataset.py
     keys.py
     quality.py
+    audit_dataset.py
     splitting.py
     data_prep.py
 tests/
     test_preprocessing.py
     test_dataset.py
+    test_dataset_audit.py
     test_keys.py
     test_quality.py
     test_splitting.py
