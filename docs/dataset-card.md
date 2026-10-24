@@ -1,8 +1,8 @@
 # Dataset Card: Phishing Email Detection System
 
-**Status: implementation documentation updated — dataset verification pending.**
+**Status: dataset candidates researched; MeAJOR remains unapproved pending verification.**
 
-The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. However, the dataset source, licence, provenance, and real-data statistics have not yet been verified in the current project state. No real-data model performance is claimed here.
+The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. MeAJOR is the leading research candidate, but its upstream rights and label mapping remain unresolved. No dataset is approved for training and no real-data model performance is claimed here. See [dataset research](dataset-research.md) and [candidate comparison](dataset-candidates.md).
 
 ## 1. Project purpose and intended use
 
@@ -36,21 +36,30 @@ The final label mapping must be reviewed against the selected dataset's actual l
 
 ## 3. Dataset source and licensing
 
-The following items remain **PENDING**:
+### Leading candidate: MeAJOR v2.0
+
+- Official record: [Zenodo v2.0](https://zenodo.org/records/18471483); paper: [MeAJOR Corpus](https://arxiv.org/abs/2507.17978).
+- Zenodo declares **CC BY 4.0** for the deposit and reports 108,685 samples. This verifies the repository's declared license, not the depositors' authority to license every embedded message or the terms of each upstream corpus.
+- Zenodo lists TREC-05/06/07, Nazario, and Nigerian Fraud as source corpora. Per-source rights evidence and a source-level provenance manifest have not been verified.
+- Zenodo defines `0 = benign` and `1 = phishing`. The paper's methods section describes TREC inputs as spam corpora, but the release does not document how source labels were mapped. Do not assume `benign` means legitimate.
+- The paper reports 220,932 combined samples before cleaning and 135,894 after duplicate and empty samples were removed. The Zenodo v2.0 record reports 108,685 samples. The relationship between the paper's post-cleaning corpus and the downloadable release is **unresolved**; do not treat these counts as interchangeable.
+- The CSV header was checked without downloading or inspecting email rows. It has 20 columns, including `body`, `source`, and `label`. The schema appears structurally compatible with the loader, but class semantics and permission must be resolved before mapping labels or training.
+
+**Recommendation:** retain MeAJOR as a research candidate only. Do not use it for training, redistribution, or commercial use until the authors clarify the label construction, release-count difference, and source-by-source rights for the intended use. A declared license is not a substitute for verifying upstream permissions. This is a due-diligence status, not legal advice.
+
+Other investigated candidates and the evidence behind this assessment are recorded in [dataset research](dataset-research.md) and [dataset candidates](dataset-candidates.md).
+
+The following project-use items remain **PENDING**:
 
 | Item | Status |
 |---|---|
-| Dataset name and authoritative source | PENDING |
-| Download location and retrieval date | PENDING |
-| Licence and permitted use | PENDING |
-| Licence verification and redistribution terms | PENDING |
-| Dataset size | PENDING |
-| Class distribution | PENDING |
-| Time period covered | PENDING |
-| Original labelling methodology | PENDING |
-| Privacy and anonymization review | PENDING |
+| Author confirmation of MeAJOR's label mapping and definition of `benign` | PENDING |
+| Explanation of 220,932 raw → 135,894 post-cleaning paper counts versus 108,685 Zenodo v2.0 count | PENDING |
+| Source-by-source upstream rights and permission for the project's intended use | PENDING |
+| Local release row count, class distribution, duplicate rate, and quality audit | PENDING |
+| Privacy and anonymization review of the actual dataset | PENDING |
 
-Do not report dataset statistics or claim that a dataset has been approved until the relevant evidence has been checked and recorded. Do not commit raw email data containing personal or confidential information.
+Do not report locally verified dataset statistics or claim that a dataset has been approved until the relevant evidence has been checked and recorded. Published counts above are attributed to their respective sources, not verified from downloaded rows. Do not commit raw email data containing personal or confidential information.
 
 ## 4. Implemented preprocessing and data loading
 
