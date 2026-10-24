@@ -189,7 +189,7 @@ Run the complete test suite after making changes. The passing test count should 
 
 ### Latest recorded test run
 
-On 2026-10-25, the Windows command above completed with **168 passed** using Python 3.12.10 and pytest 9.1.1. Rerun the command to verify the current checkout; the test count may change as tests are added or removed. Passing software tests do not verify dataset licensing, upstream rights, or label meanings; those dataset checks remain pending in the [dataset card](docs/dataset-card.md).
+On 2026-10-25, the Windows command above completed with **170 passed** using Python 3.12.10 and pytest 9.1.1. Rerun the command to verify the current checkout; the test count may change as tests are added or removed. Passing software tests do not verify dataset licensing, upstream rights, or label meanings; those dataset checks remain pending in the [dataset card](docs/dataset-card.md).
 
 ## Example: preprocess an email
 

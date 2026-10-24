@@ -54,6 +54,38 @@ def test_audit_reports_class_balance_and_split_leakage():
     assert report["group_overlap_count"] == 0
 
 
+def test_audit_reports_overlapping_groups_and_imbalanced_classes():
+    train = [
+        make_record("Phish one", "Body one", "phishing", sender="shared@example.invalid"),
+        make_record("Legitimate", "Body three", "legitimate"),
+    ]
+    test = [
+        make_record("Other", "Body four", "legitimate", sender="shared@example.invalid")
+    ]
+
+    report = audit_dataset(
+        train + test,
+        train=train,
+        test=test,
+        group_field="sender",
+    )
+
+    assert report["class_imbalance_ratio"] == 2.0
+    assert report["group_overlap_count"] == 1
+    assert report["train_test_exact_duplicate_emails"] == 0
+
+
+def test_audit_empty_records_returns_zero_counts():
+    report = audit_dataset([])
+
+    assert report["rows"] == 0
+    assert report["empty_text_rows"] == 0
+    assert report["exact_duplicate_text_rows"] == 0
+    assert report["invalid_label_rows"] == 0
+    assert report["label_distribution"] == {"phishing": 0, "legitimate": 0}
+    assert report["class_imbalance_ratio"] is None
+
+
 def test_audit_rejects_invalid_options_and_records():
     record = make_record("Subject", "Body")
 
