@@ -116,7 +116,7 @@ The precise accepted label variants are defined by `src/preprocessing.py`. A dat
 
 The project must use a dataset whose source, licence, permitted use, schema, and labeling methodology have been checked.
 
-The dataset card is maintained at `docs/dataset-card.md`. Complete its pending fields using verified information before reporting dataset statistics or model performance.
+The [dataset card](docs/dataset-card.md) records project-level verification status. See the [candidate comparison](docs/dataset-candidates.md) and [dataset selection decision](docs/dataset-selection.md) before selecting or using a corpus. Complete pending verification before reporting dataset statistics or model performance.
 
 Do not invent dataset sizes, class distributions, provenance, or evaluation results.
 
@@ -216,6 +216,8 @@ tests/
     test_data_prep.py
 docs/
     dataset-card.md
+    dataset-candidates.md
+    dataset-selection.md
 ```
 
 ## Data safety and limitations

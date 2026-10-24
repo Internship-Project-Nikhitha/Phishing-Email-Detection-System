@@ -1,8 +1,8 @@
 # Dataset Card: Phishing Email Detection System
 
-**Status: implementation documentation updated — dataset verification pending.**
+**Status: public-source review completed 2026-10-24; no dataset is cleared for this project.** See the [candidate comparison](dataset-candidates.md) and [dataset selection decision](dataset-selection.md).
 
-The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. However, the dataset source, licence, provenance, and real-data statistics have not yet been verified in the current project state. No real-data model performance is claimed here.
+The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. Candidate sources have been reviewed, but rights for underlying messages, label suitability, and a project-approved dataset remain unresolved. No real-data model performance is claimed here.
 
 ## 1. Project purpose and intended use
 
