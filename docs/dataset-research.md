@@ -50,7 +50,7 @@ The Kaggle API lists `akileshga/email-phishing-legitimate-classifier` with a dec
 
 ## Integration Policy
 
-- Keep the source data outside version control. `data/` and model artifacts are ignored by `.gitignore`.
+- Keep source data and model artifacts outside version control. The repository's `.gitignore` excludes `data/`; check any model-artifact paths before staging files.
 - Inspect only label values and aggregate counts before training; do not print message contents.
 - For MeAJOR, `body` and `label` are the verified column names, but do not train or map `0` to project `legitimate` until the creators document the original-to-MeAJOR label mapping and the project accepts the class semantics.
 - The supplied Cyber Cop CSV uses `Email Text` and `Email Type`, with observed labels `Phishing Email` and `Safe Email`. Its current audit found many conflicting-label duplicates; do not use it for training until label conflicts and rights have been reviewed.

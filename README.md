@@ -227,6 +227,8 @@ tests/
     test_data_prep.py
 docs/
     dataset-card.md
+    dataset-candidates.md
+    dataset-research.md
 ```
 
 ## Data safety and limitations
