@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 from src import keys
 
+from src.preprocessing import EmailValidationError, normalize_label
+
 Record = dict[str, str]
 
 
@@ -88,8 +90,9 @@ def deduplicate(
             )
             continue
 
-        label = record.get("label")
-        if not isinstance(label, str) or not label.strip():
+        try:
+            label = normalize_label(record.get("label"))
+        except EmailValidationError:
             removed.append(
                 RemovedRecord(
                     index,

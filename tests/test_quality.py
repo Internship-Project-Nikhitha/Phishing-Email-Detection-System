@@ -1,7 +1,7 @@
 
 import pytest
 
-from src.quality import find_duplicate_groups
+from src.quality import deduplicate, find_duplicate_groups
 
 
 def make(subject="Hello", body="World", label="legitimate"):
@@ -141,3 +141,27 @@ def test_deduplicate_is_deterministic():
     second = deduplicate(records, level="exact")
 
     assert first == second
+
+def test_deduplicate_normalizes_label_variants():
+    records = [
+        {
+            "subject": "Account alert",
+            "body": "Verify account 123",
+            "label": "Phishing",
+        },
+        {
+            "subject": "Account alert",
+            "body": "Verify account 123",
+            "label": "phishing",
+        },
+    ]
+
+    result = deduplicate(records)
+
+    assert len(result.records) == 1
+    assert result.records[0] == records[0]
+    assert len(result.removed) == 1
+    assert result.removed[0].reason == (
+        "duplicate: same content key and label"
+    )
+
