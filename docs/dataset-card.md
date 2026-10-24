@@ -1,6 +1,6 @@
 # Dataset Card: Phishing Email Detection System
 
-**Status: public-source review completed 2026-10-24; MeAJOR is not cleared for this project.**
+**Status: public-source review completed 2026-10-24; no dataset is cleared for this project.** See the [dataset selection decision](dataset-selection.md).
 
 The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. MeAJOR is a research candidate only: public-source review did not establish permission for every upstream email, a reliable mapping of its classes to phishing versus legitimate, or why the paper and release counts differ. **Do not download for project use, train on, redistribute, or commercially use MeAJOR unless these questions are resolved in writing and reviewed by the project.** No dataset is approved for training and no real-data model performance is claimed here. See [dataset research](dataset-research.md) and [candidate comparison](dataset-candidates.md).
 

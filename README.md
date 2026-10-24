@@ -116,7 +116,7 @@ The precise accepted label variants are defined by `src/preprocessing.py`. A dat
 
 The project must use a dataset whose source, licence, permitted use, schema, and labeling methodology have been checked.
 
-The [dataset card](docs/dataset-card.md) records the current candidate and unresolved checks. See the [dataset research](docs/dataset-research.md) and [candidate comparison](docs/dataset-candidates.md) before selecting or using a corpus. Complete pending verification before reporting dataset statistics or model performance.
+The [dataset card](docs/dataset-card.md) records the current candidate and unresolved checks. See the [dataset research](docs/dataset-research.md), [candidate comparison](docs/dataset-candidates.md), and [dataset selection decision](docs/dataset-selection.md) before selecting or using a corpus. Complete pending verification before reporting dataset statistics or model performance.
 
 Do not invent dataset sizes, class distributions, provenance, or evaluation results.
 
@@ -176,7 +176,7 @@ Run the complete test suite after making changes. The passing test count should 
 
 ### Latest recorded test run
 
-On 2026-10-24, the Windows command above completed with **164 passed in 2.46 seconds** using Python 3.12.10 and pytest 9.1.1. Rerun the command to verify the current checkout; the test count may change as tests are added or removed. Passing software tests do not verify dataset licensing, upstream rights, or label meanings; those MeAJOR checks remain pending in the [dataset card](docs/dataset-card.md).
+On 2026-10-24, the Windows command above completed with **164 passed** using Python 3.12.10 and pytest 9.1.1. Rerun the command to verify the current checkout; the test count may change as tests are added or removed. Passing software tests do not verify dataset licensing, upstream rights, or label meanings; those dataset checks remain pending in the [dataset card](docs/dataset-card.md).
 
 ## Example: preprocess an email
 
@@ -229,6 +229,7 @@ docs/
     dataset-card.md
     dataset-candidates.md
     dataset-research.md
+    dataset-selection.md
 ```
 
 ## Data safety and limitations
