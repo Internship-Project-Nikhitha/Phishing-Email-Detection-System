@@ -127,42 +127,49 @@ Prerequisites:
 - Python 3.11 or newer.
 - `pip`.
 
-From the repository root, create a virtual environment:
-
-```bash
-python -m venv .venv
-```
-
-Activate it on Windows PowerShell:
+From the repository root, create a virtual environment. On Windows PowerShell, explicitly select Python 3.12 and use a separate environment name so an older existing `.venv` is left untouched:
 
 ```powershell
-.venv\Scripts\Activate.ps1
+py -3.12 -m venv .venv312
 ```
 
 On Linux or macOS:
 
 ```bash
-source .venv/bin/activate
+python3 -m venv .venv
 ```
 
-Install dependencies:
+Install the dependencies in the virtual environment. In Windows PowerShell, you can call its Python directly; this avoids relying on activation or changing the system `PATH`:
+
+```powershell
+.\.venv312\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+On Linux or macOS, activate the environment before installing dependencies:
 
 ```bash
+source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
 ## Run the tests
 
-From the repository root:
+From the repository root, run the tests with the virtual environment's Python. On Windows PowerShell:
+
+```powershell
+.\.venv312\Scripts\python.exe -m pytest -q
+```
+
+On Linux or macOS (after activating `.venv`):
 
 ```bash
 python -m pytest -q
 ```
 
-For verbose test output:
+For verbose test output, use the same Python command with `-v` instead of `-q`. For example, on Windows:
 
-```bash
-python -m pytest -v
+```powershell
+.\.venv312\Scripts\python.exe -m pytest -v
 ```
 
 Run the complete test suite after making changes. The passing test count should be taken from the actual test run, not copied from an earlier run.
