@@ -88,8 +88,9 @@ def test_load_config_reports_missing_file_and_bad_json(tmp_path):
 def test_example_config_in_repo_is_valid():
     config = ds.load_config(PROJECT_ROOT / "configs" / "dataset.example.json")
 
-    assert config.columns["label"] == "Label"
-    assert config.label_map["Phishing Email"] == "phishing"
+    assert config.path == "<PENDING_DATASET_APPROVAL>"
+    assert config.columns == {"body": "body", "label": "label"}
+    assert config.label_map == {}
 
 def test_load_dataset_reads_and_preprocesses_csv(tmp_path):
     csv_path = tmp_path / "emails.csv"
