@@ -1,170 +1,241 @@
 # Phishing Email Detection System
 
-A cybersecurity internship project that will eventually classify emails as
-`phishing` or `legitimate`. The project is built in small milestones.
+A Python-based cybersecurity internship project that builds the foundations for detecting phishing emails. The project currently supports email-record validation, configurable CSV dataset loading, duplicate analysis, and leakage-aware train/validation/test splitting.
 
-## Current scope: Day 1 only
+The project is under active development. A verified real-world dataset and a trained, evaluated baseline classifier are not yet documented as completed.
 
-This repository currently contains **only** the foundation for checking and
-cleaning individual email records:
+## Current implementation status
 
-- an email record format (`subject`, `body`, `sender`, `label`)
-- label normalization to `phishing` or `legitimate`
-- whitespace cleanup that keeps punctuation and URLs intact
-- clear validation errors for bad input
-- automated tests (pytest) for the above
-- a dataset card that records what is still unknown about the data
+| Component | Status |
+|---|---|
+| Email-record validation and preprocessing | Implemented |
+| Label normalization and batch error reporting | Implemented |
+| JSON dataset configuration validation | Implemented |
+| Configurable CSV dataset loading | Implemented |
+| Exact and near-duplicate identification | Implemented |
+| Duplicate removal with conflict reporting | Implemented |
+| Train/validation/test splitting with duplicate-group protection | Implemented |
+| Combined dataset preparation workflow | Implemented |
+| Verified dataset selection and licence review | Pending |
+| Baseline machine-learning model and real-data evaluation | Pending |
 
-Nothing else exists yet. There is **no** dataset, dataset loader, train/validation/test
-split, machine-learning model, feature engineering, API, dashboard, database,
-or email upload feature.
+Implementation status describes available code, not proof that a complete end-to-end experiment has been performed.
 
-## Expected input format
+## Features
 
-One email record is a Python dictionary:
+### 1. Email preprocessing
 
-| Field     | Required?                             | Meaning                                  |
-|-----------|---------------------------------------|------------------------------------------|
-| `subject` | Optional                              | Email subject text                       |
-| `body`    | Optional                              | Email body text                          |
-| `sender`  | Optional                              | Sender address or identifier             |
-| `label`   | **Required**                          | Class label (see below)                  |
+`src/preprocessing.py` provides record validation and preprocessing.
 
-Rules:
+- Supports `subject`, `body`, `sender`, and `label` fields.
+- Requires a supported label and usable subject or body text.
+- Normalizes accepted label variants to `phishing` or `legitimate`.
+- Normalizes whitespace while preserving punctuation and URLs.
+- Reports invalid records through batch-processing results.
 
-- At least one of `subject` or `body` must contain text (after whitespace is
-  cleaned). A `sender` alone is not enough.
-- A missing or `None` optional field becomes an empty string `""`.
-- Text fields must be strings. Other types (numbers, lists, ...) are rejected.
-- Extra keys are ignored.
+Unknown labels are rejected rather than guessed. In particular, `spam` is not automatically treated as `phishing`.
 
-### Supported label variations
+### 2. Dataset configuration and loading
 
-Matching ignores upper/lower case and surrounding spaces, and treats `_` and `-`
-between words like a space (so `Safe_Email` works, but `-1` does not become `1`).
+`src/dataset.py` provides:
 
-| Normalized label | Accepted variations                                                 |
-|------------------|---------------------------------------------------------------------|
-| `phishing`       | `phishing`, `phish`, `phishing email`, `malicious`, `1`, `1` (int)  |
-| `legitimate`     | `legitimate`, `legit`, `ham`, `safe`, `safe email`, `benign`, `0`, `0` (int) |
+- JSON configuration parsing and validation.
+- Configurable CSV column mappings.
+- Configurable delimiter and text encoding.
+- Optional raw-label mappings.
+- Optional maximum row limits.
+- CSV header and row-shape checks.
+- Clear errors for invalid configuration and unreadable or malformed input.
+- Integration with the preprocessing pipeline.
 
-Any other label (for example `spam`, `suspicious`, `2`) is rejected with an
-error instead of being guessed. Booleans (`True`/`False`) are also rejected.
+Dataset configuration supports `path`, `columns`, `label_map`, `delimiter`, `encoding`, and `max_rows`.
 
-### Output format
+A configuration must map the required `label` field and at least one of `subject` or `body`.
 
-`preprocess_email()` returns a new dictionary with exactly four string fields:
-`subject`, `body`, `sender`, `label`. Text fields have their whitespace
-normalized; `label` is `"phishing"` or `"legitimate"`.
+### 3. Duplicate analysis and deduplication
 
-## Safe handling of URLs
+`src/keys.py` generates deterministic SHA-256-based identifiers for email content.
 
-Emails in phishing datasets can contain malicious links. This code treats URLs as
-plain text only: it never opens, fetches, or resolves them. When you extend this
-project, keep it that way, and never click links from dataset emails.
+- **Exact matching:** ignores case and whitespace differences in subject and body.
+- **Near matching:** additionally normalizes URLs, email addresses, digits, and punctuation to identify template-like messages.
 
-## Prerequisites
+`src/quality.py` groups duplicate records and provides deduplication with an audit trail. Duplicate records with consistent labels retain the first occurrence. Groups with conflicting labels are excluded rather than silently assigned a preferred label.
 
-- Python 3.11 or newer
-- `pip` (included with Python)
+Near-duplicate matching is more aggressive and may group unrelated messages with similar templates. Review its impact before using it for an experiment.
 
-Check your version:
+### 4. Train/validation/test splitting
 
-```
-python --version
-```
+`src/splitting.py` provides reproducible splitting into training, validation, and test partitions.
 
-On Windows you can also use the launcher: `py -3.11 --version`. If `python` is
-not found on Linux/macOS, use `python3` instead.
+- Configurable split ratios.
+- A configurable random seed.
+- Optional class-stratification behavior.
+- Exact- or near-duplicate grouping.
+- Assignment of each duplicate group to a single partition.
+- Checks for duplicate leakage across partitions.
+
+The default split ratios are 70% training, 15% validation, and 15% testing. These are targets; duplicate groups can cause the final proportions to differ.
+
+Small datasets or large duplicate groups may prevent every partition from being populated. Rare classes may also be absent from individual partitions, which can make class-specific evaluation unreliable.
+
+### 5. Combined preparation workflow
+
+`src/data_prep.py` connects dataset loading, duplicate-group analysis, and splitting through `prepare_splits()`.
+
+The returned `PreparedData` object contains:
+
+- Valid preprocessed records.
+- Errors from invalid records.
+- Duplicate-group information.
+- Train, validation, and test partitions.
+- Counts and split-size summaries.
+
+This workflow reports duplicate groups and protects the splits from duplicate leakage. It does not automatically remove duplicate records before splitting.
+
+## Expected email record format
+
+A record is represented as a Python dictionary.
+
+| Field | Requirement | Description |
+|---|---|---|
+| `subject` | Optional | Email subject |
+| `body` | Optional | Email body |
+| `sender` | Optional | Sender address or identifier |
+| `label` | Required | Class label |
+
+At least one of `subject` or `body` must contain usable text after preprocessing.
+
+Supported labels are normalized to:
+
+- `phishing`
+- `legitimate`
+
+The precise accepted label variants are defined by `src/preprocessing.py`. A dataset with different labels may require an explicitly reviewed `label_map`.
+
+## Dataset selection and provenance
+
+The project must use a dataset whose source, licence, permitted use, schema, and labeling methodology have been checked.
+
+The dataset card is maintained at `docs/dataset-card.md`. Complete its pending fields using verified information before reporting dataset statistics or model performance.
+
+Do not invent dataset sizes, class distributions, provenance, or evaluation results.
 
 ## Setup
 
-Run these commands from the project's root folder (the one containing this
-`README.md`).
+Prerequisites:
 
-**1. Create a virtual environment**
+- Python 3.11 or newer.
+- `pip`.
 
-```
+From the repository root, create a virtual environment:
+
+```bash
 python -m venv .venv
 ```
 
-**2. Activate it**
+Activate it on Windows PowerShell:
 
-- Windows (PowerShell): `.venv\Scripts\Activate.ps1`
-- Windows (Command Prompt): `.venv\Scripts\activate.bat`
-- Linux / macOS: `source .venv/bin/activate`
-
-If PowerShell blocks the script, run
-`Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned` and try again.
-
-**3. Install dependencies**
-
+```powershell
+.venv\Scripts\Activate.ps1
 ```
+
+On Linux or macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 python -m pip install -r requirements.txt
 ```
 
-The only dependency is `pytest`.
-
 ## Run the tests
 
+From the repository root:
+
+```bash
+python -m pytest -q
 ```
-python -m pytest
+
+For verbose test output:
+
+```bash
+python -m pytest -v
 ```
 
-Add `-v` for a test-by-test listing: `python -m pytest -v`.
+Run the complete test suite after making changes. The passing test count should be taken from the actual test run, not copied from an earlier run.
 
-## Quick example
-
-Start Python from the project root (`python`) and try:
+## Example: preprocess an email
 
 ```python
-from src.preprocessing import preprocess_email, preprocess_emails
+from src.preprocessing import preprocess_email
 
-preprocess_email({
+record = preprocess_email({
     "subject": "  Verify   your account ",
-    "body": "Log in at http://login.example.invalid/verify?id=1 today.",
+    "body": "Visit http://example.invalid/verify",
     "label": "Phish",
 })
-# {'subject': 'Verify your account',
-#  'body': 'Log in at http://login.example.invalid/verify?id=1 today.',
-#  'sender': '',
-#  'label': 'phishing'}
 
-result = preprocess_emails([
-    {"subject": "Hi", "body": "Lunch?", "label": "ham"},
-    {"subject": "Hi", "body": "Hello", "label": "spam"},
-])
-len(result.valid)   # 1
-result.errors[0]    # RecordError(index=1, message="Unknown label 'spam'. ...")
+print(record)
 ```
 
-## Project layout
+Expected normalized record:
 
+```python
+{
+    "subject": "Verify your account",
+    "body": "Visit http://example.invalid/verify",
+    "sender": "",
+    "label": "phishing",
+}
 ```
+
+This example uses a reserved example domain and does not access the URL.
+
+## Project structure
+
+```text
 README.md
 requirements.txt
 src/
     __init__.py
-    preprocessing.py      # validation + preprocessing functions
+    preprocessing.py
+    dataset.py
+    keys.py
+    quality.py
+    splitting.py
+    data_prep.py
 tests/
-    test_preprocessing.py # pytest tests
+    test_preprocessing.py
+    test_dataset.py
+    test_keys.py
+    test_quality.py
+    test_splitting.py
+    test_data_prep.py
 docs/
-    dataset-card.md       # dataset documentation (many fields still pending)
+    dataset-card.md
 ```
 
-## Current limitations
+## Data safety and limitations
 
-- Works on in-memory Python dictionaries only; it does not read files.
-- Only whitespace is normalized. HTML is not stripped, and invisible characters
-  such as zero-width spaces are not removed.
-- Line breaks become single spaces, so paragraph structure is not kept.
-- The sender is not checked for being a valid email address.
-- The list of label variations is small and fixed. Datasets that use other label
-  names will need those names mapped explicitly later.
-- No duplicate detection, language detection, or other dataset-level checks.
+- URLs in email records are handled as text; the project must not fetch or resolve them.
+- Do not click links or open attachments contained in suspicious emails.
+- Do not commit credentials, secrets, private mailbox exports, or unredacted personal information.
+- Verify dataset licence and privacy restrictions before downloading, using, or redistributing data.
+- Exact and near-duplicate matching are content-based heuristics, not proof that two messages belong to the same campaign.
+- The current implementation does not establish real-world detection accuracy.
+- A trained and evaluated baseline classifier, its metrics, and any production-facing interface must be documented only after they are implemented and verified.
 
-## Next planned milestone (not started)
+## Development workflow
 
-Choose a candidate dataset, verify its source and license, and fill in the
-pending sections of `docs/dataset-card.md`. Dataset loading, splitting, and any
-modeling come after that and are not part of Day 1.
+1. Work on the assigned branch.
+2. Fetch and integrate the latest `origin/main` before starting work.
+3. Inspect existing files before editing.
+4. Add focused tests for behavior changes.
+5. Run `python -m pytest -q` and `git diff --check`.
+6. Review the diff before committing.
+7. Push work to the assigned branch and use the agreed review process for integration.
+
+Do not backdate commits or report unverified work as completed.

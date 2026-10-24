@@ -1,128 +1,146 @@
 # Dataset Card: Phishing Email Detection System
 
-**Status: draft (Day 1).** No dataset has been selected or downloaded yet. Every
-item marked **PENDING** must be filled in from verified information before any
-data is used. Nothing in this card describes real results.
+**Status: implementation documentation updated — dataset verification pending.**
+
+The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. However, the dataset source, licence, provenance, and real-data statistics have not yet been verified in the current project state. No real-data model performance is claimed here.
 
 ## 1. Project purpose and intended use
 
-- **Purpose:** support an internship project that will classify emails as
-  `phishing` or `legitimate`.
-- **Intended use of the data (planned):** training and evaluating a phishing
-  email classifier for learning and research.
-- **Not intended for:** making security decisions about real mailboxes without
-  further validation, or identifying or profiling individuals.
+- **Purpose:** develop a system that classifies email records as `phishing` or `legitimate`.
+- **Intended use:** research, learning, and evaluation of phishing-email detection methods.
+- **Not intended for:** making security decisions about real mailboxes without further validation, or identifying or profiling individuals.
 
 ## 2. Required schema and label definitions
 
-Each record is a dictionary with these fields:
+Each email record uses the following fields:
 
-| Field     | Type   | Required?                              | Description                        |
-|-----------|--------|----------------------------------------|------------------------------------|
-| `subject` | string | Optional                               | Email subject text                 |
-| `body`    | string | Optional                               | Email body text                    |
-| `sender`  | string | Optional                               | Sender address or identifier       |
-| `label`   | string | **Required**                           | `phishing` or `legitimate`         |
+| Field | Type | Requirement | Description |
+|---|---|---|---|
+| `subject` | String | Optional | Email subject text |
+| `body` | String | Optional | Email body text |
+| `sender` | String | Optional | Sender address or identifier |
+| `label` | String | Required | Class label |
 
-At least one of `subject` or `body` must contain text.
+At least one of `subject` or `body` must contain usable text.
 
-**Label definitions (working definitions, to be checked against the chosen dataset's own labeling guidelines):**
+**Working label definitions — to be checked against the chosen dataset's own guidelines:**
 
-- `phishing`: an email that tries to deceive the recipient, for example into
-  revealing credentials or personal data, opening a malicious link or
-  attachment, or sending money.
-- `legitimate`: a genuine email with no deceptive or malicious intent.
+- `phishing`: an email intended to deceive recipients, such as by soliciting credentials, personal data, money, or interaction with malicious content.
+- `legitimate`: a genuine email without deceptive or malicious intent.
 
-**Accepted label spellings** (normalized by the code): `phishing`, `phish`, `phishing email`, `malicious`, and `1` for phishing; `legitimate`, `legit`, `ham`, `safe`, `safe email`, `benign`, and `0` for legitimate. Matching ignores case and surrounding whitespace. Spaces, underscores (`_`), and hyphens (`-`) between letters or digits are treated as separators, so `Safe_Email` and `safe-email` both match `safe email`. Integer labels `1` and `0` are also accepted. Other labels, including `spam`, are rejected. Spam is not automatically assumed to be phishing.
+The preprocessing implementation normalizes supported label variants to `phishing` or `legitimate`. Accepted variants include `phish`, `phishing email`, `malicious`, `legit`, `ham`, `safe`, `safe email`, `benign`, and the integer labels `1` and `0`, respectively. Matching is case-insensitive and supports documented separator variations.
+
+Unknown labels are rejected. In particular, `spam` is not automatically treated as phishing.
+
+The final label mapping must be reviewed against the selected dataset's actual labelling scheme.
 
 ## 3. Dataset source and licensing
 
-| Item                      | Status                       |
-|---------------------------|------------------------------|
-| Dataset name and source   | **PENDING** (not selected)   |
-| Download location / date  | **PENDING**                  |
-| License                   | **PENDING**                  |
-| License verification      | **PENDING**                  |
-| Terms of use / redistribution rules | **PENDING**        |
-| Dataset size (records)    | **PENDING**                  |
-| Class distribution        | **PENDING**                  |
-| Time period covered       | **PENDING**                  |
-| Original labeling method  | **PENDING**                  |
+The following items remain **PENDING**:
 
-No dataset may be added to the repository or used for training until the source
-and license are verified and recorded here.
+| Item | Status |
+|---|---|
+| Dataset name and authoritative source | PENDING |
+| Download location and retrieval date | PENDING |
+| Licence and permitted use | PENDING |
+| Licence verification and redistribution terms | PENDING |
+| Dataset size | PENDING |
+| Class distribution | PENDING |
+| Time period covered | PENDING |
+| Original labelling methodology | PENDING |
+| Privacy and anonymization review | PENDING |
 
-## 4. Data cleaning and preprocessing
+Do not report dataset statistics or claim that a dataset has been approved until the relevant evidence has been checked and recorded. Do not commit raw email data containing personal or confidential information.
 
-**Implemented in Day 1 (per individual record, in `src/preprocessing.py`):**
+## 4. Implemented preprocessing and data loading
 
-- Check that the record is a dictionary with a usable `subject` or `body`.
-- Treat missing or `None` optional fields as empty strings.
-- Normalize whitespace (runs of spaces, tabs, and newlines become one space;
-  ends are trimmed). Punctuation and URLs are left unchanged.
-- Normalize the label to `phishing` or `legitimate`, and reject unknown labels.
-- Reject records with no usable content or no valid label, with an error message.
+### Individual-record preprocessing
 
-**Planned, not implemented:** dataset-level cleaning, removal of duplicates,
-handling of encodings and HTML, and any feature extraction. These will be
-decided after the dataset is chosen and inspected.
+Implemented in `src/preprocessing.py`:
 
-## 5. Privacy and safe-handling considerations
+- Validates the record structure and supported field types.
+- Requires usable subject or body text.
+- Normalizes whitespace.
+- Normalizes recognized labels and rejects unknown labels.
+- Reports invalid records through batch-processing results.
 
-- Email datasets may contain real names, addresses, phone numbers, account
-  details, or other personal data. Check what the chosen dataset contains and
-  whether it has been anonymized (**PENDING**).
-- Do not commit raw data containing personal information to the repository.
-- Do not include credentials, secrets, or real personal emails in code, tests,
-  or documentation. Tests use fictional content and reserved example domains.
-- **URLs and attachments in phishing emails can be dangerous.** URLs are kept
-  as plain text only. Code must never open, fetch, or resolve them, and people
-  working with the data should not click links or open attachments.
-- Share only what the dataset license and privacy review allow.
+Punctuation and URLs are preserved as text. This implementation does not establish that HTML, invisible characters, or every dataset-specific encoding issue has been handled.
 
-## 6. Potential class imbalance, duplicates, bias, and limitations
+### Configurable CSV loading
 
-These are risks to check once a dataset is chosen. They are not findings.
+Implemented in `src/dataset.py`:
 
-- **Class imbalance:** phishing and legitimate emails may not be equally
-  represented. Class distribution is **PENDING**. Accuracy alone can be
-  misleading if one class dominates.
-- **Duplicates and near-duplicates:** the same or very similar emails may appear
-  many times (templates, mass mailings, forwarded copies). They can inflate
-  results if they appear in more than one data split.
-- **Source bias:** emails from one organization, time period, language, or
-  collection method may not represent other real-world email.
-- **Label quality:** labels may be noisy or assigned by an unknown process.
-- **Changing threats:** phishing tactics change over time, so older data may
-  not reflect current attacks.
-- **Content limits:** the schema keeps only subject, body, sender, and label.
-  Headers, attachments, HTML structure, and links' real destinations are not
-  represented.
+- Validates dataset configuration.
+- Supports configurable column mappings, delimiter, and encoding.
+- Supports explicit raw-label mappings and an optional row limit.
+- Checks CSV headers and row shape.
+- Reports invalid records and loading errors.
 
-## 7. Planned train/validation/test separation and leakage prevention
+The loader's existence does not mean that a real dataset has been selected, loaded, or approved.
 
-**Planned only. No splitting has been implemented.**
+## 5. Duplicate analysis and splitting
 
-- Split the data into separate training, validation, and test sets before any
-  model tuning, with the test set kept untouched until final evaluation.
-- Remove duplicates and near-duplicates before splitting, so the same email
-  cannot appear in more than one set.
-- Fit any preprocessing or vocabulary only on training data, then apply it to
-  the validation and test sets.
-- Consider keeping related emails (same sender or campaign) together in one
-  split, if the dataset provides enough information.
-- If the data has timestamps, consider splitting by time to better mimic real use.
-- Use stratified splits or another documented method so each set keeps a
-  similar label balance. Record the split method and random seed.
+### Duplicate analysis
 
-## 8. Status summary
+Implemented in `src/keys.py` and `src/quality.py`:
 
-| Item                                  | Status                |
-|---------------------------------------|-----------------------|
-| Schema and label definitions          | Defined (Day 1)       |
-| Per-record preprocessing functions    | Implemented (Day 1)   |
-| Dataset selection                     | **PENDING**           |
-| Source and license verification       | **PENDING**           |
-| Dataset size and class distribution   | **PENDING**           |
-| Duplicate and bias analysis           | Not started           |
-| Train/validation/test split           | Planned, not started  |
+- Exact matching uses normalized subject/body content.
+- Near matching applies more aggressive normalization, including URLs, email addresses, digits, and punctuation.
+- Duplicate groups can be identified.
+- Deduplication supports consistent-label records and reports conflicting-label groups rather than silently choosing a preferred label.
+
+Near matching can group unrelated messages with similar templates. Its impact must be reviewed before relying on it for evaluation.
+
+### Train/validation/test splitting
+
+Implemented in `src/splitting.py`:
+
+- Supports configurable training, validation, and test ratios.
+- Supports a random seed and optional stratification.
+- Keeps duplicate groups within a single partition.
+- Checks for duplicate leakage across partitions.
+- Reports conditions that prevent a safe split.
+
+The default target ratios are 70% training, 15% validation, and 15% testing. Actual proportions can differ because duplicate groups are assigned together.
+
+### Combined preparation workflow
+
+Implemented in `src/data_prep.py` through `prepare_splits()`:
+
+- Loads and preprocesses the configured dataset.
+- Retains invalid-record errors for inspection.
+- Reports duplicate groups.
+- Produces train, validation, and test partitions.
+
+**Important:** the combined workflow reports duplicate groups but does not automatically remove duplicate records before splitting. Duplicate-group protection is intended to prevent matching records from crossing partition boundaries.
+
+No real-data split sizes or duplicate statistics are reported in this card because the selected dataset has not yet been verified.
+
+## 6. Privacy, safety, and limitations
+
+- Email records may contain names, addresses, credentials, or other sensitive information. Review the chosen dataset's contents and licence before use.
+- Do not commit raw personal or confidential email data.
+- Do not include secrets or real personal emails in tests or documentation.
+- Treat URLs as text only. Do not fetch or resolve links from phishing emails, and do not open untrusted attachments.
+- The current record schema represents subject, body, sender, and label. It does not by itself represent all email headers, attachment contents, or the actual destination of a link.
+- Class imbalance, source bias, noisy labels, duplicate contamination, and changes in phishing tactics are risks to investigate, not findings established by this card.
+- Accuracy alone may be misleading if one class dominates. Evaluation should eventually report suitable class-sensitive metrics as well.
+
+## 7. Model and evaluation status
+
+A trained baseline classifier and evaluation on a verified real dataset are **not documented as completed in the current project state**.
+
+Before reporting model performance:
+
+1. Verify and document the dataset source, licence, schema, and labelling methodology.
+2. Record the actual dataset size and class distribution.
+3. Run the implemented audit and splitting workflow on the approved data.
+4. Record the split configuration and random seed.
+5. Train and evaluate a baseline using the agreed pipeline.
+6. Record actual results, limitations, and reproducibility details.
+
+Do not insert invented metrics, sample counts, class distributions, or provenance information.
+
+## 8. Maintenance
+
+Update this card whenever the dataset is selected, inspected, or used for evaluation. Distinguish verified facts from assumptions and pending checks. Record the evidence supporting any newly completed item.
