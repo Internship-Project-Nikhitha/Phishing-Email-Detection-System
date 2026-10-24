@@ -12,51 +12,38 @@ python -m pip install -r requirements.txt
 
 ## Dataset
 
-Read [the dataset research](docs/dataset-research.md), [candidate comparison](docs/dataset-candidates.md), and [dataset card](docs/dataset-card.md) before downloading or using any corpus. No dataset, email sample, or trained artifact is included in this repository. The recommended leading candidate is MeAJOR v2.0 on Zenodo. Its record declares CC BY 4.0 and documents `0 = benign`, `1 = phishing`; review upstream corpus terms and confirm that `benign` is an acceptable definition for this project's `legitimate` class before training, commercial use, or redistribution. The project also reviewed a separately supplied Cyber Cop Kaggle CSV; it is not recommended for training as-is because validation found many exact-text label conflicts and its email-content rights are unresolved.
+Read [the dataset research](docs/dataset-research.md) and [the dataset card](docs/dataset-card.md) before downloading or using any corpus. No dataset, email sample, or trained artifact is included in this repository. The current candidate is the Kaggle `Phishing Email Detection` dataset mirrored on Hugging Face. Its mirror advertises LGPL-3.0, but rights in the source email content and original collection lineage have not been independently established. Do not redistribute the data unless you have confirmed the applicable rights.
 
-Download `meajor_cleaned_preprocessed.csv` from the [official Zenodo record](https://zenodo.org/records/18471483) and place it at `data/meajor_cleaned_preprocessed.csv`. Do not commit the dataset. First inspect the header without reading message contents:
+Download the CSV from [the Hugging Face repository](https://huggingface.co/datasets/zefang-liu/phishing-email-dataset/tree/main) or Kaggle and place it at `data/Phishing_Email.csv`. The Kaggle download may require an account. First inspect the header without reading message contents:
 
 ```powershell
-python -c "import pandas as pd; print(pd.read_csv('data/meajor_cleaned_preprocessed.csv', nrows=0).columns.tolist())"
+python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', nrows=0).columns.tolist())"
 ```
 
 ## Validate and Train
 
-Inspect the stored label values and counts without printing email text:
+If the confirmed header includes `Email Type`, inspect its exact stored values and counts without printing email text:
 
 ```powershell
-python -c "import pandas as pd; print(pd.read_csv('data/meajor_cleaned_preprocessed.csv', usecols=['label'])['label'].value_counts(dropna=False).to_dict())"
+python -c "import pandas as pd; print(pd.read_csv('data/Phishing_Email.csv', usecols=['Email Type'])['Email Type'].value_counts(dropna=False).to_dict())"
 ```
 
-Zenodo defines `1` as phishing and `0` as benign. Counts show stored values, not their correctness. The source does not prove that benign means legitimate rather than any non-phishing email (potentially including spam). Continue only after accepting that limitation and reviewing source terms. If accepted, validate and train using the explicit source mappings:
-
-```powershell
-python -m src.data.validate_dataset data/meajor_cleaned_preprocessed.csv `
-  --text-column "body" --label-column "label" `
-  --phishing-label "1" `
-  --legitimate-label "0"
-
-python -m src.train data/meajor_cleaned_preprocessed.csv `
-  --text-column "body" --label-column "label" `
-  --phishing-label "1" `
-  --legitimate-label "0" `
-  --output artifacts/phishing_baseline.joblib
-```
-
-The `source` field is present in the CSV header, but inspect its values and confirm its meaning before using `--group-column source`. A group split can reduce known source overlap, but the default random stratified split does not establish independence across source, campaign, sender, or time.
-
-### If you were given `Phishing_Email.csv` instead
-
-Do not replace the repository with the ZIP contents. Extract only `Phishing_Email.csv` into `data\Phishing_Email.csv`; the `data\` folder is ignored by Git, so the email file will not be committed. The local copy reviewed for this project had columns `Email Text` and `Email Type` (plus an undocumented blank/index-like column) and labels `Safe Email` and `Phishing Email`. Kaggle declares LGPL-3.0, but rights to the original email contents and the uploader's authority are not established. The project validator also found 533 exact-text duplicates with conflicting labels. Do not train on this copy until the label conflicts and applicable rights have been reviewed. Full results are in [the dataset card](docs/dataset-card.md).
-
-If you are authorized to inspect the local file, the following command reports aggregate validation results only; it does not print email bodies:
+The source metadata describes an email-type field but does not define its exact labels or establish that they mean phishing versus legitimate. Counts reveal stored values, not their meanings. Confirm class semantics and applicable rights before training; do not map labels based on guessed spellings. When the class meanings are confirmed, use the exact source label strings:
 
 ```powershell
 python -m src.data.validate_dataset data/Phishing_Email.csv `
   --text-column "Email Text" --label-column "Email Type" `
-  --phishing-label "Phishing Email" `
-  --legitimate-label "Safe Email"
+  --phishing-label "<exact phishing label>" `
+  --legitimate-label "<exact safe label>"
+
+python -m src.train data/Phishing_Email.csv `
+  --text-column "Email Text" --label-column "Email Type" `
+  --phishing-label "<exact phishing label>" `
+  --legitimate-label "<exact safe label>" `
+  --output artifacts/phishing_baseline.joblib
 ```
+
+Replace the angle-bracketed arguments with the exact values shown by the label inspection. If records have a documented source or campaign field, supply it as `--group-column <column>` to hold groups out of the test set. The default random stratified split does not establish independence across source, campaign, sender, or time.
 
 ## Check One Email
 
