@@ -47,7 +47,17 @@ Do not map `benign`, `safe`, `spam`, or numeric labels to `legitimate` or `phish
 2. If a dataset is later approved, update this document with its exact official record, release/version, license/terms, retrieval date, and verified schema before sharing download instructions.
 3. Never commit raw email data. Keep approved files local and verify they remain excluded by `.gitignore`.
 
-The task pack refers to `python scripts/audit_dataset.py` and `python scripts/check_pending.py`; those scripts are not present in the current repository checkout, so neither command is available or reported as run.
+## Configuration and pending-marker checks
+
+No source dataset is approved, so `configs/dataset.example.json` is a schema example only. Its path is deliberately `<PENDING_DATASET_APPROVAL>`, and its empty `label_map` does not guess source-label meanings. Do not copy it to `configs/dataset.json` or use it to load data until a dataset, its exact columns, label meanings, and usage rights are approved.
+
+Run the scoped checker from the repository root:
+
+```powershell
+python scripts/check_pending.py
+```
+
+It checks only this dataset card, candidate review, selection decision, and example config. `PENDING`, `UNVERIFIED`, `TODO`, and `<FILL ...>` occurrences are printed with file and line numbers. These findings are informational and return exit status 0 because the current blockers are documented intentionally. Missing or unreadable configured files return exit status 2 so an incomplete scan cannot look successful.
 
 ## Risks and limitations
 
@@ -64,6 +74,7 @@ Run from the repository root:
 
 ```powershell
 .\.venv312\Scripts\python.exe -m pytest -q
+python scripts/check_pending.py
 git diff --check
 ```
 
