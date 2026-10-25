@@ -18,7 +18,7 @@ MARKER_RE = re.compile(r"<FILL\b[^>]*>|\b(?:TODO|PENDING|UNVERIFIED)\b", re.IGNO
 
 
 def check_pending(paths: Sequence[Path], output: TextIO) -> int:
-    """Report marker locations; pending findings are informational, missing files fail."""
+    """Report markers informationally; unreadable files fail the check."""
     findings = 0
     failures = 0
 
