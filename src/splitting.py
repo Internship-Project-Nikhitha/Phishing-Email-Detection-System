@@ -6,13 +6,15 @@ cannot leak across train, validation, and test. No email URLs are fetched.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 import random
 import warnings
 from dataclasses import dataclass
 from typing import Iterable
 
-from src.preprocessing import EmailValidationError, preprocess_email
+from src.preprocessing import EmailValidationError, normalize_text, preprocess_email
 from src.keys import key_function
 
 Record = dict[str, str]
@@ -33,6 +35,31 @@ class SplitResult:
 
     def sizes(self) -> dict[str, int]:
         return {name: len(self.by_name(name)) for name in SPLIT_NAMES}
+
+
+@dataclass(frozen=True)
+class LeakageReport:
+    """Count-based, content-free summary of a split leakage audit.
+
+    ``groups_checked`` counts distinct exact/near identity keys across all
+    partitions. ``duplicate_groups_checked`` counts keys occurring more than
+    once, including duplicates contained entirely within one partition.
+    ``overlap_groups`` counts keys that occur in multiple partitions, and
+    ``overlapping_records`` counts all records belonging to those groups.
+    No record text or content key is included in the report.
+    """
+
+    duplicate_level: str
+    records_checked: int
+    groups_checked: int
+    duplicate_groups_checked: int
+    overlap_groups: int
+    overlapping_records: int
+
+    @property
+    def is_leakage_free(self) -> bool:
+        """Whether no identity group crosses partition boundaries."""
+        return self.overlap_groups == 0
 
 
 def validate_ratios(ratios: tuple[float, float, float]) -> tuple[float, float, float]:
@@ -181,17 +208,108 @@ def split_dataset(
     return result
 
 
-def assert_no_duplicate_leakage(result: SplitResult, duplicate_level: str = "exact") -> None:
-    """Raise ValueError if duplicate keys occur in more than one partition."""
+def audit_split_leakage(
+    result: SplitResult, duplicate_level: str = "exact"
+) -> LeakageReport:
+    """Audit exact/near identity groups and return a content-free count report.
+
+    This report checks all records in ``result`` and does not mutate the
+    partitions. A group is considered leaked when its key appears in two or
+    more different partitions. Repeated records wholly contained in one split
+    are counted as duplicate groups but not as leakage.
+
+    The report contains counts only; it does not expose email text or content
+    keys. Use :func:`assert_no_duplicate_leakage` when leakage must raise.
+    """
+    if not isinstance(result, SplitResult):
+        raise TypeError("result must be a SplitResult instance.")
     key_fn = key_function(duplicate_level)
-    seen: dict[str, str] = {}
+    group_counts: dict[str, int] = {}
+    group_splits: dict[str, set[str]] = {}
+    records_checked = 0
+
     for split_name in SPLIT_NAMES:
         for record in result.by_name(split_name):
             key = key_fn(record)
-            previous = seen.get(key)
-            if previous is not None and previous != split_name:
+            records_checked += 1
+            group_counts[key] = group_counts.get(key, 0) + 1
+            group_splits.setdefault(key, set()).add(split_name)
+
+    leaked_keys = {
+        key for key, split_names in group_splits.items() if len(split_names) > 1
+    }
+    return LeakageReport(
+        duplicate_level=duplicate_level,
+        records_checked=records_checked,
+        groups_checked=len(group_counts),
+        duplicate_groups_checked=sum(count > 1 for count in group_counts.values()),
+        overlap_groups=len(leaked_keys),
+        overlapping_records=sum(group_counts[key] for key in leaked_keys),
+    )
+
+
+def assert_no_duplicate_leakage(result: SplitResult, duplicate_level: str = "exact") -> None:
+    """Raise ``ValueError`` if exact/near duplicate keys cross partitions.
+
+    This backwards-compatible assertion delegates to :func:`audit_split_leakage`
+    and reports the number of overlapping groups without including email text.
+    """
+    report = audit_split_leakage(result, duplicate_level=duplicate_level)
+    if not report.is_leakage_free:
+        raise ValueError(
+            f"Duplicate leakage detected: {report.overlap_groups} {duplicate_level} "
+            f"duplicate group(s) occur across train/validation/test splits "
+            f"({report.overlapping_records} records in overlapping groups)."
+        )
+
+
+def fingerprint_split(result: SplitResult, duplicate_level: str = "exact") -> str:
+    """Return a deterministic SHA-256 fingerprint for split identities/assignments.
+
+    Fingerprint inputs for each record are: the selected exact/near SHA-256
+    content key (based on normalized subject and body), the canonical label,
+    the assigned partition name, and a SHA-256 digest of the normalized sender.
+    These entries are sorted before serialization, so reordering records
+    *within the same partition* does not change the fingerprint. Record
+    multiplicity is retained. The returned value is only a 64-character
+    hexadecimal digest; raw email text and sender values are never returned.
+
+    The digest changes when a record's canonical identity, sender, label, or
+    partition assignment changes. As with any deterministic unsalted hash, it
+    is not anonymization and may be guessable for known or low-entropy inputs;
+    do not use it as a substitute for access controls. The selected duplicate
+    level defines identity, so changes ignored by that key's normalization may
+    not change the digest. The seed and requested ratios are not independently
+    encoded: the fingerprint describes the resulting records and assignments.
+    """
+    if not isinstance(result, SplitResult):
+        raise TypeError("result must be a SplitResult instance.")
+    key_fn = key_function(duplicate_level)
+    entries: list[tuple[str, str, str, str]] = []
+
+    for split_name in SPLIT_NAMES:
+        for index, record in enumerate(result.by_name(split_name)):
+            try:
+                cleaned = preprocess_email(record)
+                identity = key_fn(cleaned)
+                sender_digest = hashlib.sha256(
+                    normalize_text(cleaned["sender"]).casefold().encode("utf-8")
+                ).hexdigest()
+            except (EmailValidationError, TypeError, ValueError) as exc:
                 raise ValueError(
-                    f"Duplicate leakage detected: a {duplicate_level} duplicate occurs in "
-                    f"both {previous!r} and {split_name!r}."
-                )
-            seen[key] = split_name
+                    f"Cannot fingerprint invalid record in {split_name} split at index {index}: {exc}"
+                ) from exc
+            entries.append((split_name, identity, cleaned["label"], sender_digest))
+
+    canonical_payload = {
+        "format": "phishing-split-fingerprint-v1",
+        "duplicate_level": duplicate_level,
+        "records": [list(entry) for entry in sorted(entries)],
+    }
+    serialized = json.dumps(
+        canonical_payload,
+        sort_keys=True,
+        ensure_ascii=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(serialized).hexdigest()
