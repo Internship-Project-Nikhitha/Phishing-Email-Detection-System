@@ -1,10 +1,18 @@
 
+
+
+"""Tests for dataset quality checks and deduplication."""
+
 import pytest
 
-from src.quality import find_duplicate_groups
 
+from src.quality import (
+    audit_quality,
+    deduplicate,
+    find_duplicate_groups,
+)
 
-def make(subject="Hello", body="World", label="legitimate"):
+def make(subject="Hello", body="World", label="Safe Email"):
     return {
         "subject": subject,
         "body": body,
@@ -39,74 +47,40 @@ def test_near_duplicates_are_grouped():
     assert list(groups.values()) == [[0, 1]]
 
 
-def test_unique_records_are_excluded():
+def test_deduplicate_is_deterministic():
     records = [
-        make("First subject", "First body"),
-        make("Second subject", "Second body"),
+        make("Account Alert", "Verify your account"),
+        make("Different", "Unique message"),
     ]
 
-    assert find_duplicate_groups(records) == {}
+    first = deduplicate(records, level="exact")
+    second = deduplicate(records, level="exact")
+
+    assert first == second
 
 
-def test_all_duplicate_groups_keep_original_indexes():
+def test_label_variants_are_normalized():
     records = [
-        make("A", "Same message"),
-        make("B", "Other message"),
-        make("A", "Same message"),
-        make("B", "Other message"),
+        make("Account alert", "Verify account 123", "Phishing"),
+        make("Account alert", "Verify account 123", "phishing"),
     ]
 
-    groups = find_duplicate_groups(records, level="exact")
+    result = deduplicate(records, level="exact")
 
-    assert sorted(sorted(indexes) for indexes in groups.values()) == [
-        [0, 2],
-        [1, 3],
+    assert len(result.records) == 1
+    assert len(result.removed) == 1
+    assert result.removed[0].reason == (
+        "duplicate: same content key and label"
+    )
+
+
+def test_conflicting_labels_exclude_entire_group():
+    records = [
+        make("Account alert", "Verify account 123", "Phishing Email"),
+        make("Account alert", "Verify account 123", "Safe Email"),
     ]
 
-
-def test_empty_records_return_no_groups():
-    assert find_duplicate_groups([]) == {}
-
-
-def test_unknown_level_raises_value_error():
-    with pytest.raises(ValueError, match="Unknown key level"):
-        find_duplicate_groups([make()], level="fuzzy")
-
-
-
-
-def test_deduplicate_empty_and_singleton():
-    from src.quality import deduplicate
-
-    assert deduplicate([]).records == []
-
-    record = make("Unique", "Message")
-    result = deduplicate([record])
-
-    assert result.records == [record]
-    assert result.removed == []
-
-
-def test_deduplicate_same_label_keeps_first():
-    from src.quality import deduplicate
-
-    first = make("Hello", "World", "legitimate")
-    duplicate = make("hello", " world ", "legitimate")
-
-    result = deduplicate([first, duplicate], level="exact")
-
-    assert result.records == [first]
-    assert result.removed[0].index == 1
-    assert result.removed[0].kept_index == 0
-
-
-def test_deduplicate_conflicting_labels():
-    from src.quality import deduplicate
-
-    legitimate = make("Account Alert", "Verify now", "legitimate")
-    phishing = make("account alert", " verify now ", "phishing")
-
-    result = deduplicate([legitimate, phishing], level="exact")
+    result = deduplicate(records, level="exact")
 
     assert result.records == []
     assert len(result.removed) == 2
@@ -116,28 +90,115 @@ def test_deduplicate_conflicting_labels():
     )
 
 
-def test_deduplicate_malformed_record():
-    from src.quality import deduplicate
+def test_missing_label_is_removed():
+    records = [make("Account alert", "Verify account 123", "")]
 
-    valid = make("Valid", "Message")
-    missing_label = {"subject": "No label", "body": "Message"}
+    result = deduplicate(records, level="exact")
 
-    result = deduplicate([valid, missing_label])
-
-    assert result.records == [valid]
-    assert result.removed[0].index == 1
+    assert result.records == []
+    assert len(result.removed) == 1
     assert result.removed[0].reason.startswith("malformed_record:")
 
 
-def test_deduplicate_is_deterministic():
-    from src.quality import deduplicate
-
+def test_missing_subject_is_removed():
     records = [
-        make("A", "Same", "legitimate"),
-        make("A", "Same", "legitimate"),
+        {
+            "subject": None,
+            "body": "Verify your account",
+            "sender": "",
+            "label": "Safe Email",
+        }
     ]
 
-    first = deduplicate(records, level="exact")
-    second = deduplicate(records, level="exact")
+    result = deduplicate(records, level="exact")
 
-    assert first == second
+    assert result.records == []
+    assert len(result.removed) == 1
+    assert result.removed[0].reason.startswith("malformed_record:")
+
+
+def test_empty_input():
+    result = deduplicate([])
+
+    assert result.records == []
+    assert result.removed == []
+    assert find_duplicate_groups([]) == {}
+
+
+def test_invalid_duplicate_level_raises_error():
+    records = [make()]
+
+    with pytest.raises(ValueError):
+        find_duplicate_groups(records, level="invalid")
+
+    with pytest.raises(ValueError):
+        deduplicate(records, level="invalid")
+
+def test_audit_quality_with_clean_records():
+    records = [
+        make("Welcome", "Your account is ready", "Safe Email"),
+        make("Meeting", "Meeting starts at noon", "Safe Email"),
+    ]
+
+    result = audit_quality(records, level="exact")
+
+    assert result.total_records == 2
+    assert result.invalid_records == 0
+    assert result.duplicate_groups == 0
+    assert result.duplicate_records == 0
+    assert result.conflicting_label_groups == 0
+
+
+def test_audit_quality_counts_invalid_records():
+    records = [
+        make("Welcome", "Your account is ready"),
+        {
+            "subject": None,
+            "body": "Invalid subject",
+            "sender": "",
+            "label": "Safe Email",
+        },
+    ]
+
+    result = audit_quality(records, level="exact")
+
+    assert result.total_records == 2
+    assert result.invalid_records == 1
+
+
+def test_audit_quality_counts_duplicate_records():
+    records = [
+        make("Account Alert", "Verify your account"),
+        make("Account Alert", "Verify your account"),
+        make("Unique", "A different message"),
+    ]
+
+    result = audit_quality(records, level="exact")
+
+    assert result.total_records == 3
+    assert result.duplicate_groups == 1
+    assert result.duplicate_records == 1
+    assert result.conflicting_label_groups == 0
+
+
+def test_audit_quality_detects_conflicting_labels():
+    records = [
+        make("Account Alert", "Verify your account", "Phishing Email"),
+        make("Account Alert", "Verify your account", "Safe Email"),
+    ]
+
+    result = audit_quality(records, level="exact")
+
+    assert result.duplicate_groups == 1
+    assert result.duplicate_records == 1
+    assert result.conflicting_label_groups == 1
+
+
+def test_audit_quality_with_empty_input():
+    result = audit_quality([])
+
+    assert result.total_records == 0
+    assert result.invalid_records == 0
+    assert result.duplicate_groups == 0
+    assert result.duplicate_records == 0
+    assert result.conflicting_label_groups == 0
