@@ -148,61 +148,102 @@ class QualityAudit:
     duplicate_groups: int
     duplicate_records: int
     conflicting_label_groups: int
+    valid_records: int
+    missing_content_records: int
+    invalid_label_records: int
+    exact_duplicate_groups: int
+    exact_duplicate_records: int
+    near_duplicate_groups: int
+    near_duplicate_records: int
 
 
 def audit_quality(
     records: list[Record], level: str = "exact"
 ) -> QualityAudit:
-    """Audit records for malformed entries, duplicates, and label conflicts.
+    """Audit dataset quality without modifying the input records.
 
-    This function does not modify the input records. Duplicate and
-    conflicting-label counts are calculated using the selected key level.
+    Legacy duplicate fields use the selected level. Exact and near
+    duplicate metrics are also reported independently.
     """
-    key_function = keys.key_function(level)
-    groups: dict[str, list[int]] = {}
+    selected_key = keys.key_function(level)
+    exact_key = keys.key_function("exact")
+    near_key = keys.key_function("near")
+
+    valid_indexes: list[int] = []
+    labels: dict[int, str] = {}
     invalid_indexes: set[int] = set()
-    labels_by_index: dict[int, str] = {}
+    missing_content = 0
+    invalid_labels = 0
 
     for index, record in enumerate(records):
         if not isinstance(record, dict):
             invalid_indexes.add(index)
             continue
 
-        if not isinstance(record.get("subject"), str):
-            invalid_indexes.add(index)
-            continue
+        subject = record.get("subject")
+        body = record.get("body")
+        fields_valid = isinstance(subject, str) and isinstance(body, str)
 
-        if not isinstance(record.get("body"), str):
+        has_content = (
+            fields_valid and bool(subject.strip() or body.strip())
+        )
+
+        if not fields_valid:
             invalid_indexes.add(index)
-            continue
+        elif not has_content:
+            missing_content += 1
+            invalid_indexes.add(index)
 
         try:
             label = normalize_label(record.get("label"))
-            key = key_function(record)
         except (EmailValidationError, TypeError, ValueError, AttributeError):
+            invalid_labels += 1
             invalid_indexes.add(index)
             continue
 
-        labels_by_index[index] = label
-        groups.setdefault(key, []).append(index)
+        if not fields_valid or not has_content:
+            continue
 
-    duplicate_groups = [
-        indexes for indexes in groups.values() if len(indexes) > 1
-    ]
+        labels[index] = label
+        valid_indexes.append(index)
 
-    conflicting_groups = [
-        indexes
-        for indexes in duplicate_groups
-        if len({labels_by_index[index] for index in indexes}) > 1
-    ]
+    def summarize(key_function):
+        groups: dict[str, list[int]] = {}
+
+        for index in valid_indexes:
+            key = key_function(records[index])
+            groups.setdefault(key, []).append(index)
+
+        duplicate_groups = [
+            indexes for indexes in groups.values() if len(indexes) > 1
+        ]
+        group_count = len(duplicate_groups)
+        record_count = sum(
+            len(indexes) - 1 for indexes in duplicate_groups
+        )
+        conflicts = sum(
+            len({labels[index] for index in indexes}) > 1
+            for indexes in duplicate_groups
+        )
+
+        return group_count, record_count, conflicts
+
+    selected_groups, selected_records, conflicts = summarize(selected_key)
+    exact_groups, exact_records, _ = summarize(exact_key)
+    near_groups, near_records, _ = summarize(near_key)
 
     return QualityAudit(
         total_records=len(records),
         invalid_records=len(invalid_indexes),
-        duplicate_groups=len(duplicate_groups),
-        duplicate_records=sum(
-            len(indexes) - 1 for indexes in duplicate_groups
-        ),
-        conflicting_label_groups=len(conflicting_groups),
+        duplicate_groups=selected_groups,
+        duplicate_records=selected_records,
+        conflicting_label_groups=conflicts,
+        valid_records=len(valid_indexes),
+        missing_content_records=missing_content,
+        invalid_label_records=invalid_labels,
+        exact_duplicate_groups=exact_groups,
+        exact_duplicate_records=exact_records,
+        near_duplicate_groups=near_groups,
+        near_duplicate_records=near_records,
     )
 

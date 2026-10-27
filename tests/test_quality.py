@@ -202,3 +202,71 @@ def test_audit_quality_with_empty_input():
     assert result.duplicate_groups == 0
     assert result.duplicate_records == 0
     assert result.conflicting_label_groups == 0
+
+def test_audit_reports_valid_and_invalid_records():
+    records = [
+        make("Welcome", "Account ready", "legitimate"),
+        make("", "   ", "legitimate"),
+        make("Warning", "Verify account", "invalid-label"),
+    ]
+
+    result = audit_quality(records)
+
+    assert result.total_records == 3
+    assert result.valid_records == 1
+    assert result.invalid_records == 2
+    assert result.missing_content_records == 1
+    assert result.invalid_label_records == 1
+
+
+def test_audit_reports_exact_and_near_duplicates():
+    records = [
+        make("Invoice 123", "Please visit https://example.com"),
+        make("Invoice 456", "Please visit https://another.com"),
+        make("Unique", "Different message"),
+    ]
+
+    result = audit_quality(records)
+
+    assert result.exact_duplicate_groups == 0
+    assert result.exact_duplicate_records == 0
+    assert result.near_duplicate_groups == 1
+    assert result.near_duplicate_records == 1
+
+
+def test_audit_preserves_legacy_duplicate_fields():
+    records = [
+        make("Account Alert", "Verify your account", "legitimate"),
+        make("Account Alert", "Verify your account", "phishing"),
+    ]
+
+    result = audit_quality(records, level="exact")
+
+    assert result.duplicate_groups == result.exact_duplicate_groups == 1
+    assert result.duplicate_records == result.exact_duplicate_records == 1
+    assert result.conflicting_label_groups == 1
+
+
+def test_audit_does_not_mutate_input():
+    records = [
+        make("Account Alert", "Verify your account", "legitimate"),
+        make("Account Alert", "Verify your account", "legitimate"),
+    ]
+    original = [record.copy() for record in records]
+
+    audit_quality(records)
+
+    assert records == original
+
+def test_audit_counts_invalid_label_on_malformed_record():
+    result = audit_quality([
+        {
+            "subject": None,
+            "body": "Example message",
+            "label": "not-a-valid-label",
+        }
+    ])
+
+    assert result.invalid_records == 1
+    assert result.invalid_label_records == 1
+    assert result.valid_records == 0
