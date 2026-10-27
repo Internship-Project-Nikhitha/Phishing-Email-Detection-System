@@ -195,3 +195,262 @@ def test_rare_class_missing_from_split_emits_warning():
         for name in sp.SPLIT_NAMES
         for record in result.by_name(name)
     ) == 3
+
+
+def test_audit_split_leakage_reports_clean_counts_and_within_split_duplicates():
+    duplicate = {
+        "subject": "Monthly security reminder",
+        "body": "Review your account settings today",
+        "sender": "security@example.invalid",
+        "label": "phishing",
+    }
+    result = sp.SplitResult(
+        train=[duplicate, dict(duplicate)],
+        validation=[{
+            "subject": "Team lunch plans",
+            "body": "Meet in the cafeteria at noon",
+            "sender": "colleague@example.invalid",
+            "label": "legitimate",
+        }],
+        test=[{
+            "subject": "Quarterly report available",
+            "body": "The report is ready for review",
+            "sender": "reports@example.invalid",
+            "label": "legitimate",
+        }],
+    )
+
+    report = sp.audit_split_leakage(result)
+
+    assert report.duplicate_level == "exact"
+    assert report.records_checked == 4
+    assert report.groups_checked == 3
+    assert report.duplicate_groups_checked == 1
+    assert report.overlap_groups == 0
+    assert report.overlapping_records == 0
+    assert report.is_leakage_free is True
+    assert sp.assert_no_duplicate_leakage(result) is None
+
+
+def test_audit_split_leakage_counts_injected_exact_overlap_without_exposing_text():
+    shared_subject = "PRIVATE TEST EMAIL subject should not appear in report"
+    shared_body = "PRIVATE TEST EMAIL body should not appear in report"
+    train_record = {
+        "subject": shared_subject,
+        "body": shared_body,
+        "sender": "sender-one@example.invalid",
+        "label": "phishing",
+    }
+    validation_record = {
+        "subject": shared_subject,
+        "body": shared_body,
+        "sender": "sender-two@example.invalid",
+        "label": "phishing",
+    }
+    result = sp.SplitResult(
+        train=[train_record],
+        validation=[validation_record],
+        test=[{
+            "subject": "Independent note",
+            "body": "A distinct content identity",
+            "sender": "another@example.invalid",
+            "label": "legitimate",
+        }],
+    )
+
+    report = sp.audit_split_leakage(result, duplicate_level="exact")
+
+    assert report.records_checked == 3
+    assert report.groups_checked == 2
+    assert report.duplicate_groups_checked == 1
+    assert report.overlap_groups == 1
+    assert report.overlapping_records == 2
+    assert report.is_leakage_free is False
+    assert shared_subject not in repr(report)
+    assert shared_body not in repr(report)
+    with pytest.raises(
+        ValueError, match="Duplicate leakage detected: 1 exact duplicate group"
+    ):
+        sp.assert_no_duplicate_leakage(result, duplicate_level="exact")
+
+
+def test_audit_split_leakage_counts_a_group_spanning_all_three_partitions_once():
+    shared = {
+        "subject": "One identity across partitions",
+        "body": "Synthetic repeated record",
+        "sender": "audit@example.invalid",
+        "label": "phishing",
+    }
+    result = sp.SplitResult(
+        train=[shared], validation=[dict(shared)], test=[dict(shared)]
+    )
+
+    report = sp.audit_split_leakage(result)
+
+    assert report.groups_checked == 1
+    assert report.duplicate_groups_checked == 1
+    assert report.overlap_groups == 1
+    assert report.overlapping_records == 3
+
+
+def test_audit_split_leakage_uses_near_duplicate_identity():
+    result = sp.SplitResult(
+        train=[{
+            "subject": "Dear user 123",
+            "body": "Open https://first.example.invalid/account/123 now",
+            "label": "phishing",
+        }],
+        validation=[{
+            "subject": "Dear user 456",
+            "body": "Open https://second.example.invalid/account/456 now",
+            "label": "phishing",
+        }],
+        test=[],
+    )
+
+    report = sp.audit_split_leakage(result, duplicate_level="near")
+
+    assert report.groups_checked == 1
+    assert report.overlap_groups == 1
+    assert report.overlapping_records == 2
+    assert report.is_leakage_free is False
+
+
+def test_audit_split_leakage_handles_small_and_empty_split_results():
+    small_result = sp.SplitResult(
+        train=[{
+            "subject": "A single synthetic email",
+            "body": "Small fixture for audit behavior",
+            "label": "legitimate",
+        }],
+        validation=[],
+        test=[],
+    )
+    report = sp.audit_split_leakage(small_result)
+    assert report.records_checked == 1
+    assert report.groups_checked == 1
+    assert report.overlap_groups == 0
+    assert report.is_leakage_free
+
+    empty_report = sp.audit_split_leakage(sp.SplitResult([], [], []))
+    assert empty_report.records_checked == 0
+    assert empty_report.groups_checked == 0
+    assert empty_report.overlap_groups == 0
+    assert empty_report.is_leakage_free
+
+
+def test_audit_split_leakage_rejects_unknown_duplicate_level():
+    with pytest.raises(ValueError, match="Unknown key level"):
+        sp.audit_split_leakage(
+            sp.SplitResult([], [], []), duplicate_level="approximate"
+        )
+
+
+def test_fingerprint_is_deterministic_for_same_input_and_seed():
+    records = make_records(per_label=12)
+    first = sp.fingerprint_split(sp.split_dataset(records, random_state=29))
+    second = sp.fingerprint_split(sp.split_dataset(records, random_state=29))
+
+    assert first == second
+    assert len(first) == 64
+    assert all(character in "0123456789abcdef" for character in first)
+
+
+def test_fingerprint_is_order_independent_within_partitions_and_preserves_multiplicity():
+    a = {
+        "subject": "Unique alpha subject",
+        "body": "Synthetic message alpha",
+        "sender": "alpha@example.invalid",
+        "label": "phishing",
+    }
+    b = {
+        "subject": "Unique bravo subject",
+        "body": "Synthetic message bravo",
+        "sender": "bravo@example.invalid",
+        "label": "legitimate",
+    }
+    c = {
+        "subject": "Unique charlie subject",
+        "body": "Synthetic message charlie",
+        "sender": "charlie@example.invalid",
+        "label": "phishing",
+    }
+    first = sp.SplitResult(train=[a, b], validation=[c], test=[])
+    reordered = sp.SplitResult(train=[dict(b), dict(a)], validation=[dict(c)], test=[])
+    with_extra_copy = sp.SplitResult(train=[a, b, dict(a)], validation=[c], test=[])
+
+    assert sp.fingerprint_split(first) == sp.fingerprint_split(reordered)
+    assert sp.fingerprint_split(first) != sp.fingerprint_split(with_extra_copy)
+
+
+def test_fingerprint_changes_when_record_identity_label_sender_or_assignment_changes():
+    a = {
+        "subject": "Synthetic password alert",
+        "body": "Please review the account notice",
+        "sender": "alerts@example.invalid",
+        "label": "phishing",
+    }
+    b = {
+        "subject": "Synthetic team update",
+        "body": "The meeting begins at ten",
+        "sender": "team@example.invalid",
+        "label": "legitimate",
+    }
+    base = sp.SplitResult(train=[a], validation=[b], test=[])
+    base_fingerprint = sp.fingerprint_split(base)
+
+    changed_content = dict(a, body="A changed synthetic account notice")
+    changed_label = dict(a, label="legitimate")
+    changed_sender = dict(a, sender="changed@example.invalid")
+    changed_assignment = sp.SplitResult(train=[], validation=[a, b], test=[])
+
+    changed_content_result = sp.SplitResult(
+        train=[changed_content], validation=[b], test=[]
+    )
+    changed_label_result = sp.SplitResult(
+        train=[changed_label], validation=[b], test=[]
+    )
+    changed_sender_result = sp.SplitResult(
+        train=[changed_sender], validation=[b], test=[]
+    )
+    assert sp.fingerprint_split(changed_content_result) != base_fingerprint
+    assert sp.fingerprint_split(changed_label_result) != base_fingerprint
+    assert sp.fingerprint_split(changed_sender_result) != base_fingerprint
+    assert sp.fingerprint_split(changed_assignment) != base_fingerprint
+
+
+def test_fingerprint_contains_no_raw_email_text_and_handles_small_results():
+    private_subject = "SYNTHETIC PRIVATE SUBJECT NOT FOR OUTPUT"
+    private_body = "SYNTHETIC PRIVATE BODY NOT FOR OUTPUT"
+    result = sp.SplitResult(
+        train=[{
+            "subject": private_subject,
+            "body": private_body,
+            "sender": "private-sender@example.invalid",
+            "label": "phishing",
+        }],
+        validation=[],
+        test=[],
+    )
+
+    fingerprint = sp.fingerprint_split(result)
+
+    assert len(fingerprint) == 64
+    assert private_subject not in fingerprint
+    assert private_body not in fingerprint
+    assert "private-sender@example.invalid" not in fingerprint
+    empty_fingerprint = sp.fingerprint_split(sp.SplitResult([], [], []))
+    assert len(empty_fingerprint) == 64
+    assert empty_fingerprint == sp.fingerprint_split(sp.SplitResult([], [], []))
+
+
+def test_fingerprint_rejects_invalid_records_and_duplicate_levels():
+    malformed = sp.SplitResult(
+        train=[{"subject": "Subject", "body": "Body"}], validation=[], test=[]
+    )
+    with pytest.raises(ValueError, match="Cannot fingerprint invalid record"):
+        sp.fingerprint_split(malformed)
+    with pytest.raises(ValueError, match="Unknown key level"):
+        sp.fingerprint_split(
+            sp.SplitResult([], [], []), duplicate_level="approximate"
+        )
