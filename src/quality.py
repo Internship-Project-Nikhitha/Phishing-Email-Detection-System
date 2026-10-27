@@ -246,4 +246,3 @@ def audit_quality(
         near_duplicate_groups=near_groups,
         near_duplicate_records=near_records,
     )
-
