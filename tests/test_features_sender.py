@@ -29,6 +29,7 @@ def test_has_sender_and_has_domain():
     assert feats("")["sender_has_sender"] == 0.0
     assert feats("support-team")["sender_has_sender"] == 1.0
     assert feats("support-team")["sender_has_domain"] == 0.0
+    assert feats(None)["sender_has_sender"] == 0.0
 
 
 def test_free_mail_detection():
@@ -41,19 +42,27 @@ def test_display_name_mismatch_flags_a_fake_domain_in_the_name():
     honest = feats("example.com <hello@example.com>")
     subdomain = feats("example.com <hello@mail.example.com>")
     plain_name = feats("Alice Smith <alice@example.com>")
+    dotted_person_name = feats("John.Smith <john@example.com>")
 
     assert spoof["sender_display_name_mismatch"] == 1.0
     assert honest["sender_display_name_mismatch"] == 0.0
     assert subdomain["sender_display_name_mismatch"] == 0.0
     assert plain_name["sender_display_name_mismatch"] == 0.0
+    assert dotted_person_name["sender_display_name_mismatch"] == 0.0
 
 
 def test_missing_sender_gives_all_zero_features():
     assert set(feats("").values()) == {0.0}
+    assert set(feats(None).values()) == {0.0}
     assert set(sf.extract({}).values()) == {0.0}
 
 
-# @@PART 2
+def test_ip_domain_requires_a_valid_ip_literal():
+    assert feats("a@192.0.2.10")["sender_ip_domain"] == 1.0
+    assert feats("a@999.999.999.999")["sender_ip_domain"] == 0.0
+    assert feats("a@example.com")["sender_ip_domain"] == 0.0
+
+
 def test_local_part_digits_and_domain_shape():
     result = feats("user12345@mail.shop.example.com")
 
