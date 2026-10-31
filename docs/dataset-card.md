@@ -1,8 +1,8 @@
 # Dataset Card: Phishing Email Detection System
 
-**Status: implementation documentation updated — dataset verification pending.**
+**Status: public-source review completed 2026-10-24; no dataset is cleared for this project.** See the [dataset selection decision](dataset-selection.md).
 
-The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. However, the dataset source, licence, provenance, and real-data statistics have not yet been verified in the current project state. No real-data model performance is claimed here.
+The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. MeAJOR is a research candidate only: public-source review did not establish permission for every upstream email, a reliable mapping of its classes to phishing versus legitimate, or why the paper and release counts differ. **Do not download for project use, train on, redistribute, or commercially use MeAJOR unless these questions are resolved in writing and reviewed by the project.** No dataset is approved for training and no real-data model performance is claimed here. See [dataset research](dataset-research.md) and [candidate comparison](dataset-candidates.md).
 
 ## 1. Project purpose and intended use
 
@@ -36,21 +36,31 @@ The final label mapping must be reviewed against the selected dataset's actual l
 
 ## 3. Dataset source and licensing
 
-The following items remain **PENDING**:
+### Leading candidate: MeAJOR v2.0
+
+- Official record: [Zenodo v2.0](https://zenodo.org/records/18471483); paper: [MeAJOR Corpus](https://arxiv.org/abs/2507.17978).
+- Zenodo's [record metadata](https://zenodo.org/api/records/18471483) declares **CC BY 4.0** for the deposit and reports 108,685 samples. This confirms the license identifier selected for the deposit, not that the depositors hold every right needed for all embedded messages or that all upstream terms permit the intended use. The [CC BY 4.0 legal code](https://creativecommons.org/licenses/by/4.0/legalcode) itself does not warrant title or non-infringement.
+- Zenodo names TREC-05/06/07, Nazario, and Nigerian Fraud. The [NIST TREC Spam Track page](https://trec.nist.gov/data/spam.html) identifies the TREC collections as spam corpora but does not state an applicable reuse license. The [Nazario maintainer's README](https://monkey.org/~jose/phishing/README.txt) states CC BY 4.0 for that corpus and warns that it is a personal inbox, hand-classified with possible errors, and that later mailbox material is not anonymized. MeAJOR does not provide a row-level source manifest, an exact upstream release/version for every source, or a rights statement for the named Nigerian Fraud collection. The upstream-rights review is therefore **not cleared**, not merely assumed from Zenodo's deposit-level label.
+- Zenodo defines `0 = benign` and `1 = phishing`. The paper's methods section describes TREC inputs as spam corpora, but neither the record nor the inspected paper documents how original labels were assigned to these two MeAJOR classes. Do not assume `benign` means legitimate.
+- The paper reports 220,932 combined samples before cleaning and 135,894 after duplicate and empty samples were removed. The Zenodo v2.0 record reports 108,685 samples. No public explanation linking the paper's post-cleaning corpus to the downloadable release was found; the discrepancy is **unresolved**. Do not treat these counts as interchangeable.
+- The CSV header was checked without downloading or inspecting email rows. It has 20 columns, including `body`, `source`, and `label`. The schema appears structurally compatible with the loader, but class semantics and permission must be resolved before mapping labels or training.
+
+**Recommendation:** MeAJOR is **not cleared for project use**. Do not train on or redistribute it unless the authors provide written source-by-source rights/provenance, explain the label construction and count difference, and the project approves the response. A declared license is not a substitute for verifying upstream permissions. No author confirmation has been obtained; this is a due-diligence status, not legal advice.
+
+Other investigated candidates and the evidence behind this assessment are recorded in [dataset research](dataset-research.md) and [dataset candidates](dataset-candidates.md).
+
+The following project-use items remain **PENDING**:
 
 | Item | Status |
 |---|---|
-| Dataset name and authoritative source | PENDING |
-| Download location and retrieval date | PENDING |
-| Licence and permitted use | PENDING |
-| Licence verification and redistribution terms | PENDING |
-| Dataset size | PENDING |
-| Class distribution | PENDING |
-| Time period covered | PENDING |
-| Original labelling methodology | PENDING |
-| Privacy and anonymization review | PENDING |
+| Written author confirmation of the exact upstream source releases and reuse rights for each source, including Nigerian Fraud and TREC materials | PENDING — not established by public record |
+| Author explanation of the original-to-MeAJOR label mapping and definition of `benign` | PENDING — not established by public record |
+| Explanation linking 220,932 raw → 135,894 post-cleaning paper counts to the 108,685 Zenodo v2.0 release | PENDING — no public reconciliation found |
+| Project/legal review of permissions for the intended use after written clarification | PENDING |
+| Local release row count, class distribution, duplicate rate, and quality audit | PENDING |
+| Privacy and anonymization review of the actual dataset | PENDING |
 
-Do not report dataset statistics or claim that a dataset has been approved until the relevant evidence has been checked and recorded. Do not commit raw email data containing personal or confidential information.
+Do not report locally verified dataset statistics or claim that a dataset has been approved until the relevant evidence has been checked and recorded. Published counts above are attributed to their respective sources, not verified from downloaded rows. Do not commit raw email data containing personal or confidential information.
 
 ## 4. Implemented preprocessing and data loading
 
