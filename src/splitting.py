@@ -229,8 +229,18 @@ def audit_split_leakage(
     records_checked = 0
 
     for split_name in SPLIT_NAMES:
-        for record in result.by_name(split_name):
-            key = key_fn(record)
+        for index, record in enumerate(result.by_name(split_name)):
+            # Audit the same canonical record shape used by the split pipeline.
+            # Without this check, a record missing its label (or containing
+            # malformed fields) could be reported as leakage-free simply
+            # because the content-key function only reads subject/body.
+            try:
+                cleaned = preprocess_email(record)
+                key = key_fn(cleaned)
+            except (EmailValidationError, TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Cannot audit invalid record in {split_name} split at index {index}: {exc}"
+                ) from exc
             records_checked += 1
             group_counts[key] = group_counts.get(key, 0) + 1
             group_splits.setdefault(key, set()).add(split_name)
