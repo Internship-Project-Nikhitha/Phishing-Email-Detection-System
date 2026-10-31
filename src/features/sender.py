@@ -4,6 +4,7 @@ Everything here is computed from the sender *text* only. No DNS lookups, no
 network requests, and the sender is never contacted.
 """
 
+import ipaddress
 import re
 from email.utils import parseaddr
 from typing import Any
@@ -15,15 +16,32 @@ registry = FeatureRegistry("sender")
 # Heuristic lists. They are examples of common patterns, not complete or
 # authoritative; document any change in docs/features-sender.md.
 FREE_MAIL_DOMAINS = frozenset(
-    {"gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "aol.com", "proton.me",
-     "protonmail.com", "icloud.com", "mail.com", "gmx.com"}
+    {
+        "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "aol.com",
+        "proton.me", "protonmail.com", "icloud.com", "mail.com", "gmx.com",
+    }
 )
 SUSPICIOUS_TLDS = frozenset(
-    {"zip", "mov", "top", "xyz", "click", "work", "loan", "gq", "tk", "ml", "cf", "ga", "icu", "rest"}
+    {
+        "zip", "mov", "top", "xyz", "click", "work", "loan", "gq", "tk",
+        "ml", "cf", "ga", "icu", "rest",
+    }
 )
 
-_IPV4_RE = re.compile(r"^\[?\d{1,3}(?:\.\d{1,3}){3}\]?$")
 _DOMAIN_IN_TEXT_RE = re.compile(r"[a-z0-9-]+(?:\.[a-z0-9-]+)+")
+
+# Conservative common TLD allowlist for identifying domain-like tokens in a
+# display name. This avoids treating names such as "John.Smith" as domains.
+# It is intentionally a heuristic and is not a replacement for the Public
+# Suffix List.
+_RECOGNIZED_TLDS = frozenset(
+    {
+        "com", "org", "net", "edu", "gov", "mil", "int", "info", "biz",
+        "name", "pro", "aero", "coop", "museum", "app", "dev", "io", "ai",
+        "co", "uk", "in", "de", "fr", "jp", "au", "ca", "us", "me",
+        "online", "site", "store", *SUSPICIOUS_TLDS,
+    }
+)
 
 
 def extract(record: dict[str, Any]) -> dict[str, float]:
@@ -36,16 +54,15 @@ def descriptions() -> dict[str, str]:
     return registry.descriptions()
 
 
-def parse_sender(sender: str) -> tuple[str, str, str]:
-    """Split a sender string into ``(display_name, local_part, domain)``.
+def parse_sender(sender: Any) -> tuple[str, str, str]:
+    """Split a sender value into ``(display_name, local_part, domain)``.
 
     All three parts are lower-case. Missing parts are ``''``. A value without
-    an ``@`` is treated as a bare identifier (no domain).
-
-    Example:
-        ``'Alice <Alice@Example.com>'`` gives ``('alice', 'alice', 'example.com')``.
+    an ``@`` is treated as a bare identifier (no domain). Non-string missing
+    values are normalized safely.
     """
-    name, address = parseaddr(sender or "")
+    raw_sender = "" if sender is None else str(sender)
+    name, address = parseaddr(raw_sender)
     address = address.strip().lower()
     display = name.strip().lower()
     if "@" not in address:
@@ -60,7 +77,8 @@ def _domain(record: dict[str, Any]) -> str:
 
 @registry.register("has_sender", "The email has a sender value.")
 def has_sender(record: dict[str, Any]) -> float:
-    return 1.0 if str(record.get("sender", "")).strip() else 0.0
+    sender = record.get("sender")
+    return 1.0 if sender is not None and str(sender).strip() else 0.0
 
 
 @registry.register("has_domain", "The sender looks like an email address with a domain.")
@@ -81,25 +99,41 @@ def display_name_mismatch(record: dict[str, Any]) -> float:
     display, _, domain = parse_sender(record.get("sender", ""))
     if not display or not domain:
         return 0.0
+
     for shown in _DOMAIN_IN_TEXT_RE.findall(display):
-        if not (shown == domain or domain.endswith("." + shown) or shown.endswith("." + domain)):
+        shown_tld = shown.rsplit(".", 1)[-1]
+        if shown_tld not in _RECOGNIZED_TLDS:
+            continue
+        if not (
+            shown == domain
+            or domain.endswith("." + shown)
+            or shown.endswith("." + domain)
+        ):
             return 1.0
     return 0.0
 
 
-# @@PART 2
-@registry.register("local_digit_count", "Number of digits in the part of the address before the @ sign.")
+@registry.register(
+    "local_digit_count",
+    "Number of digits in the part of the address before the @ sign.",
+)
 def local_digit_count(record: dict[str, Any]) -> float:
     local = parse_sender(record.get("sender", ""))[1]
     return float(sum(char.isdigit() for char in local))
 
 
-@registry.register("domain_length", "Length of the sender domain; very long domains are often auto-generated.")
+@registry.register(
+    "domain_length",
+    "Length of the sender domain; very long domains are often auto-generated.",
+)
 def domain_length(record: dict[str, Any]) -> float:
     return float(len(_domain(record)))
 
 
-@registry.register("subdomain_count", "Number of subdomain levels in the sender domain (mail.shop.example.com has 2).")
+@registry.register(
+    "subdomain_count",
+    "Number of subdomain levels in the sender domain (mail.shop.example.com has 2).",
+)
 def subdomain_count(record: dict[str, Any]) -> float:
     domain = _domain(record)
     return float(max(0, len(domain.split(".")) - 2)) if domain else 0.0
@@ -110,7 +144,10 @@ def hyphen_count(record: dict[str, Any]) -> float:
     return float(_domain(record).count("-"))
 
 
-@registry.register("suspicious_tld", "The sender domain ends in a top-level domain often used in abuse.")
+@registry.register(
+    "suspicious_tld",
+    "The sender domain ends in a top-level domain often used in abuse.",
+)
 def suspicious_tld(record: dict[str, Any]) -> float:
     domain = _domain(record)
     return 1.0 if domain and domain.rsplit(".", 1)[-1] in SUSPICIOUS_TLDS else 0.0
@@ -118,9 +155,19 @@ def suspicious_tld(record: dict[str, Any]) -> float:
 
 @registry.register("ip_domain", "The sender 'domain' is a raw IP address.")
 def ip_domain(record: dict[str, Any]) -> float:
-    return 1.0 if _IPV4_RE.match(_domain(record)) else 0.0
+    domain = _domain(record).strip("[]")
+    if not domain:
+        return 0.0
+    try:
+        ipaddress.ip_address(domain)
+    except ValueError:
+        return 0.0
+    return 1.0
 
 
-@registry.register("punycode", "The sender domain uses punycode (xn--), which can disguise look-alike characters.")
+@registry.register(
+    "punycode",
+    "The sender domain uses punycode (xn--), which can disguise look-alike characters.",
+)
 def punycode(record: dict[str, Any]) -> float:
     return 1.0 if "xn--" in _domain(record) else 0.0
