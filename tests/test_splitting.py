@@ -454,3 +454,36 @@ def test_fingerprint_rejects_invalid_records_and_duplicate_levels():
         sp.fingerprint_split(
             sp.SplitResult([], [], []), duplicate_level="approximate"
         )
+
+
+
+def test_audit_split_leakage_rejects_malformed_records_instead_of_reporting_clean():
+    malformed = {
+        "subject": "A subject with content",
+        "body": "A body with content",
+        # A label is required for a valid dataset record.
+    }
+    result = sp.SplitResult(train=[malformed], validation=[], test=[])
+
+    with pytest.raises(ValueError, match="Cannot audit invalid record in train split at index 0"):
+        sp.audit_split_leakage(result)
+
+
+def test_fingerprint_normalizes_sender_before_hashing():
+    record = {
+        "subject": "Synthetic sender normalization",
+        "body": "A stable synthetic message body",
+        "sender": "  Alerts@Example.Invalid  ",
+        "label": "phishing",
+    }
+    normalized_sender = dict(record, sender="alerts@example.invalid")
+
+    first = sp.SplitResult(train=[record], validation=[], test=[])
+    second = sp.SplitResult(train=[normalized_sender], validation=[], test=[])
+
+    assert sp.fingerprint_split(first) == sp.fingerprint_split(second)
+
+
+def test_leakage_audit_rejects_non_split_result():
+    with pytest.raises(TypeError, match="result must be a SplitResult"):
+        sp.audit_split_leakage({"train": [], "validation": [], "test": []})
