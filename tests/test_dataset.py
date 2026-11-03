@@ -88,8 +88,9 @@ def test_load_config_reports_missing_file_and_bad_json(tmp_path):
 def test_example_config_in_repo_is_valid():
     config = ds.load_config(PROJECT_ROOT / "configs" / "dataset.example.json")
 
-    assert config.columns["label"] == "Label"
-    assert config.label_map["Phishing Email"] == "phishing"
+    assert config.path == "<PENDING_DATASET_APPROVAL>"
+    assert config.columns == {"body": "body", "label": "label"}
+    assert config.label_map == {}
 
 def test_load_dataset_reads_and_preprocesses_csv(tmp_path):
     csv_path = tmp_path / "emails.csv"
@@ -168,3 +169,124 @@ def test_load_dataset_applies_max_rows(tmp_path):
 
     assert len(result.valid) == 1
     assert result.valid[0]["subject"] == "First"
+
+
+def test_load_dataset_reports_missing_dataset_file(tmp_path):
+    config = ds.DatasetConfig(
+        path=str(tmp_path / "missing.csv"),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    with pytest.raises(ds.DatasetError, match="Dataset file not found"):
+        ds.load_dataset(config)
+
+
+def test_load_dataset_rejects_row_with_extra_values(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text(
+        "Subject,Body,Label\n"
+        "Hello,Message,legitimate,unexpected\n",
+        encoding="utf-8",
+    )
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    with pytest.raises(ds.DatasetError, match="more values than the header"):
+        ds.load_dataset(config)
+
+
+def test_load_dataset_rejects_malformed_csv_quoting(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text(
+        'Subject,Body,Label\n'
+        '"Unclosed subject,Message,phishing\n',
+        encoding="utf-8",
+    )
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    with pytest.raises(ds.DatasetError, match="Could not read dataset file"):
+        ds.load_dataset(config)
+
+
+def test_load_dataset_reports_invalid_label_in_record(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text(
+        "Subject,Body,Label\n"
+        "Hello,Message,unknown-label\n",
+        encoding="utf-8",
+    )
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    result = ds.load_dataset(config)
+
+    assert result.valid == []
+    assert len(result.errors) == 1
+    assert "Unknown label" in result.errors[0].message
+
+
+def test_load_dataset_reports_record_without_usable_content(tmp_path):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text(
+        "Subject,Body,Label\n"
+        ",,phishing\n",
+        encoding="utf-8",
+    )
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    result = ds.load_dataset(config)
+
+    assert result.valid == []
+    assert len(result.errors) == 1
+    assert "no usable content" in result.errors[0].message.lower()
+
+
+def test_load_dataset_reports_non_file_dataset_path(tmp_path):
+    dataset_path = tmp_path / "emails.csv"
+    dataset_path.mkdir()
+
+    config = ds.DatasetConfig(
+        path=str(dataset_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    with pytest.raises(ds.DatasetError, match="Dataset file not found"):
+        ds.load_dataset(config)
+
+
+def test_load_dataset_reports_unreadable_dataset_file(
+    tmp_path, monkeypatch
+):
+    csv_path = tmp_path / "emails.csv"
+    csv_path.write_text(
+        "Subject,Body,Label\n"
+        "Hello,Message,phishing\n",
+        encoding="utf-8",
+    )
+
+    config = ds.DatasetConfig(
+        path=str(csv_path),
+        columns={"subject": "Subject", "body": "Body", "label": "Label"},
+    )
+
+    original_open = Path.open
+
+    def raise_permission_error(path, *args, **kwargs):
+        if path == csv_path:
+            raise PermissionError("permission denied")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", raise_permission_error)
+
+    with pytest.raises(ds.DatasetError, match="Could not read dataset file"):
+        ds.load_dataset(config)

@@ -1,3 +1,27 @@
-﻿__pycache__/
+# Python
+__pycache__/
 *.py[cod]
 .venv/
+venv/
+.pytest_cache/
+
+# Secrets and local settings (copy .env.example to .env, never commit .env)
+.env
+
+# Raw / processed data must never be committed (privacy + licensing)
+data/raw/
+data/processed/
+
+# Trained model files and local databases are generated, not committed
+models/**/*.joblib
+*.db
+*.sqlite3
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local Windows virtual environment used by the team
+.venv312/

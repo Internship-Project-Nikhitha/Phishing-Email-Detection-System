@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from src.preprocessing import BatchResult, preprocess_emails
+from src.preprocessing import BatchResult, RecordError, preprocess_emails
 
 COLUMN_FIELDS = ("subject", "body", "sender", "label")
 LABEL_TARGETS = ("phishing", "legitimate")
@@ -211,3 +211,25 @@ def load_dataset(
         raise DatasetError("Dataset CSV contains no data rows.")
 
     return preprocess_emails(records)
+
+
+def categorize_error(message: str) -> str:
+    """Group a validation message into a short reason for summary tables."""
+    if message.startswith("Unknown label"):
+        return "unknown label"
+    if message.startswith("Label is"):
+        return "missing or empty label"
+    if "no usable content" in message:
+        return "no usable content"
+    if "must be a string" in message:
+        return "wrong field type"
+    return "other"
+
+
+def count_error_reasons(errors: list[RecordError]) -> dict[str, int]:
+    """Count rejected rows by short reason (see ``categorize_error``)."""
+    counts: dict[str, int] = {}
+    for error in errors:
+        reason = categorize_error(error.message)
+        counts[reason] = counts.get(reason, 0) + 1
+    return dict(sorted(counts.items()))

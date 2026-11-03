@@ -1,15 +1,10 @@
 {
-  "path": "data/emails.csv",
+  "path": "<PENDING_DATASET_APPROVAL>",
   "columns": {
-    "subject": "Subject",
-    "body": "Body",
-    "sender": "Sender",
-    "label": "Label"
+    "body": "body",
+    "label": "label"
   },
-  "label_map": {
-    "Phishing Email": "phishing",
-    "Legitimate Email": "legitimate"
-  },
+  "label_map": {},
   "delimiter": ",",
   "encoding": "utf-8-sig",
   "max_rows": null
