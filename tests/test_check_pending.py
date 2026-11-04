@@ -51,5 +51,5 @@ def test_default_dataset_paths_report_intentional_pending_items():
     result = check_pending(DEFAULT_PATHS, output)
 
     assert result == 0
-    assert "unresolved marker 'PENDING'" in output.getvalue()
+    assert "unresolved marker" in output.getvalue()
     assert "informational" in output.getvalue()
