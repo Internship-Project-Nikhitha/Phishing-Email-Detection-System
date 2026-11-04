@@ -15,6 +15,10 @@ from src.preprocessing import BatchResult, RecordError, preprocess_emails
 
 COLUMN_FIELDS = ("subject", "body", "sender", "label")
 LABEL_TARGETS = ("phishing", "legitimate")
+# Real emails can have very large bodies. Python's csv module stops at 131,072
+# characters per field by default, which would abort loading the whole file.
+MAX_FIELD_CHARS = 5_000_000
+
 _CONFIG_KEYS = ("path", "columns", "label_map", "delimiter", "encoding", "max_rows")
 
 
@@ -149,6 +153,8 @@ def load_dataset(
 
     if not path.is_file():
         raise DatasetError(f"Dataset file not found: {path}")
+
+    csv.field_size_limit(MAX_FIELD_CHARS)
 
     records = []
     label_map = {
