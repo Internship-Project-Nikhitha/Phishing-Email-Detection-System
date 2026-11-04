@@ -1,8 +1,8 @@
 # Dataset Card: Phishing Email Detection System
 
-**Status: public-source review completed 2026-10-24; no dataset is cleared for this project.** See the [dataset selection decision](dataset-selection.md).
+**Status: MeAJOR v2.0 selected on 2026-11-04 with documented limits; local statistics verified on the downloaded file (see sections 3 and 5).** See the [dataset selection decision](dataset-selection.md).
 
-The repository now contains a configurable CSV loader, preprocessing and validation, duplicate analysis, and a leakage-aware train/validation/test splitting workflow. MeAJOR is a research candidate only: public-source review did not establish permission for every upstream email, a reliable mapping of its classes to phishing versus legitimate, or why the paper and release counts differ. **Do not download for project use, train on, redistribute, or commercially use MeAJOR unless these questions are resolved in writing and reviewed by the project.** No dataset is approved for training and no real-data model performance is claimed here. See [dataset research](dataset-research.md) and [candidate comparison](dataset-candidates.md).
+The system classifies emails as `phishing` or `legitimate`. For this dataset the two classes are MeAJOR's `0 = benign` and `1 = phishing`, and the "phishing" class is TREC spam/phishing mail (see section 3). Do not read results as general phishing detection.
 
 ## 1. Project purpose and intended use
 
@@ -36,31 +36,38 @@ The final label mapping must be reviewed against the selected dataset's actual l
 
 ## 3. Dataset source and licensing
 
-### Leading candidate: MeAJOR v2.0
+### Selected dataset: MeAJOR v2.0
 
-- Official record: [Zenodo v2.0](https://zenodo.org/records/18471483); paper: [MeAJOR Corpus](https://arxiv.org/abs/2507.17978).
-- Zenodo's [record metadata](https://zenodo.org/api/records/18471483) declares **CC BY 4.0** for the deposit and reports 108,685 samples. This confirms the license identifier selected for the deposit, not that the depositors hold every right needed for all embedded messages or that all upstream terms permit the intended use. The [CC BY 4.0 legal code](https://creativecommons.org/licenses/by/4.0/legalcode) itself does not warrant title or non-infringement.
-- Zenodo names TREC-05/06/07, Nazario, and Nigerian Fraud. The [NIST TREC Spam Track page](https://trec.nist.gov/data/spam.html) identifies the TREC collections as spam corpora but does not state an applicable reuse license. The [Nazario maintainer's README](https://monkey.org/~jose/phishing/README.txt) states CC BY 4.0 for that corpus and warns that it is a personal inbox, hand-classified with possible errors, and that later mailbox material is not anonymized. MeAJOR does not provide a row-level source manifest, an exact upstream release/version for every source, or a rights statement for the named Nigerian Fraud collection. The upstream-rights review is therefore **not cleared**, not merely assumed from Zenodo's deposit-level label.
-- Zenodo defines `0 = benign` and `1 = phishing`. The paper's methods section describes TREC inputs as spam corpora, but neither the record nor the inspected paper documents how original labels were assigned to these two MeAJOR classes. Do not assume `benign` means legitimate.
-- The paper reports 220,932 combined samples before cleaning and 135,894 after duplicate and empty samples were removed. The Zenodo v2.0 record reports 108,685 samples. No public explanation linking the paper's post-cleaning corpus to the downloadable release was found; the discrepancy is **unresolved**. Do not treat these counts as interchangeable.
-- The CSV header was checked without downloading or inspecting email rows. It has 20 columns, including `body`, `source`, and `label`. The schema appears structurally compatible with the loader, but class semantics and permission must be resolved before mapping labels or training.
+- Official record: [Zenodo v2.0](https://zenodo.org/records/18471483); paper: [MeAJOR Corpus](https://arxiv.org/abs/2507.17978). Downloaded 2026-11-04 and kept only on local machines (`data/raw/`, git-ignored).
+- Declared license: **CC BY 4.0** for the Zenodo deposit. This is the deposit-level declaration; it does not prove the depositors hold every right over all embedded emails, and no written clarification from the authors or upstream owners was obtained.
+- Approved by the team lead on 2026-11-04 for this educational, non-commercial internship project only, with the limits in [dataset-selection.md](dataset-selection.md).
+- The file has 20 columns. We use `subject`, `body` and `label`. Sender and receiver addresses are hashed in this dataset, so the `sender` column is not used and sender features have little signal.
 
-**Recommendation:** MeAJOR is **not cleared for project use**. Do not train on or redistribute it unless the authors provide written source-by-source rights/provenance, explain the label construction and count difference, and the project approves the response. A declared license is not a substitute for verifying upstream permissions. No author confirmation has been obtained; this is a due-diligence status, not legal advice.
+### What the local file contains (verified from the downloaded file, 2026-11-04)
 
-Other investigated candidates and the evidence behind this assessment are recorded in [dataset research](dataset-research.md) and [dataset candidates](dataset-candidates.md).
+- Data rows read: **108,685** (matches the Zenodo record). Valid: **108,684**. Rejected: **1** (empty label).
+- Labels are written `0.0` and `1.0` in the file; `configs/dataset.json` maps `0`/`0.0` to `legitimate` and `1`/`1.0` to `phishing`.
+- The `source` column has only `trec5`, `trec6` and `trec7`. The Nazario and Nigerian Fraud sources named on the record and in the paper do **not** appear in this release.
 
-The following project-use items remain **PENDING**:
+| Source | Label 0 (benign) | Label 1 (phishing/spam) | Total |
+|---|---|---|---|
+| trec5 | 29,929 | 19,654 | 49,583 |
+| trec6 | 11,208 | 3,797 | 15,005 |
+| trec7 | 19,513 | 24,583 | 44,096 |
+| (empty source and label) | | | 1 |
+| **All** | 60,650 | 48,034 | 108,685 |
+
+Both labels occur in every source, so the source alone does not give the label. Because the sources are TREC spam corpora, label 1 is the spam-labelled mail. The task learned here is spam/phishing versus ordinary mail from 2005 to 2007.
+
+### Open items
 
 | Item | Status |
 |---|---|
-| Written author confirmation of the exact upstream source releases and reuse rights for each source, including Nigerian Fraud and TREC materials | PENDING — not established by public record |
-| Author explanation of the original-to-MeAJOR label mapping and definition of `benign` | PENDING — not established by public record |
-| Explanation linking 220,932 raw → 135,894 post-cleaning paper counts to the 108,685 Zenodo v2.0 release | PENDING — no public reconciliation found |
-| Project/legal review of permissions for the intended use after written clarification | PENDING |
-| Local release row count, class distribution, duplicate rate, and quality audit | PENDING |
-| Privacy and anonymization review of the actual dataset | PENDING |
-
-Do not report locally verified dataset statistics or claim that a dataset has been approved until the relevant evidence has been checked and recorded. Published counts above are attributed to their respective sources, not verified from downloaded rows. Do not commit raw email data containing personal or confidential information.
+| Written author confirmation of upstream source rights | Not obtained; accepted as a documented limit |
+| Author explanation of how original labels became `benign`/`phishing` | Not found; label 1 is described as phishing/spam in all reports |
+| Paper counts (220,932 raw, 135,894 cleaned) versus the release (108,685) | No public explanation found; we report what we loaded |
+| Privacy review | No manual review of message text was done; addresses are hashed per the paper. Do not print or share message contents |
+| Local row count, class distribution, duplicate rate | Done 2026-11-04 (`reports/dataset_audit.md`, `reports/dataset_sources.md`) |
 
 ## 4. Implemented preprocessing and data loading
 
@@ -122,9 +129,21 @@ Implemented in `src/data_prep.py` through `prepare_splits()`:
 - Reports duplicate groups.
 - Produces train, validation, and test partitions.
 
-**Important:** the combined workflow reports duplicate groups but does not automatically remove duplicate records before splitting. Duplicate-group protection is intended to prevent matching records from crossing partition boundaries.
+The combined workflow removes duplicate records and label conflicts before splitting (`quality.deduplicate`), so no copy of the same email can cross partitions.
 
-No real-data split sizes or duplicate statistics are reported in this card because the selected dataset has not yet been verified.
+### Real-data results (2026-11-04, seed 42, near-duplicate level)
+
+- Quality audit (`reports/dataset_audit.md`): exact duplicate groups 1,045 (4,155 records); near-duplicate groups 1,206 (5,244 records); groups with conflicting labels 0.
+- Near-duplicate removal removed 5,244 records, leaving **103,440**.
+- Split (`reports/split_summary.md`), leakage check passed:
+
+| Split | Records | Phishing | Legitimate |
+|---|---|---|---|
+| train | 72,406 | 32,384 | 40,022 |
+| validation | 15,517 | 6,940 | 8,577 |
+| test | 15,517 | 6,940 | 8,577 |
+
+The test split is reserved for the single final evaluation.
 
 ## 6. Privacy, safety, and limitations
 
@@ -138,18 +157,20 @@ No real-data split sizes or duplicate statistics are reported in this card becau
 
 ## 7. Model and evaluation status
 
-A trained baseline classifier and evaluation on a verified real dataset are **not documented as completed in the current project state**.
+A TF-IDF (1-2 grams) + Logistic Regression baseline was trained on the training split and evaluated on the **validation** split only (`reports/baseline_metrics.md`, 2026-11-04, seed 42):
 
-Before reporting model performance:
+| Metric | Value |
+|---|---|
+| Accuracy | 0.9783 |
+| Precision | 0.9740 |
+| Recall | 0.9775 |
+| F1-score | 0.9758 |
+| False-positive rate | 0.0211 |
+| False-negative rate | 0.0225 |
 
-1. Verify and document the dataset source, licence, schema, and labelling methodology.
-2. Record the actual dataset size and class distribution.
-3. Run the implemented audit and splitting workflow on the approved data.
-4. Record the split configuration and random seed.
-5. Train and evaluate a baseline using the agreed pipeline.
-6. Record actual results, limitations, and reproducibility details.
+Of 6,940 phishing validation emails, 156 were missed; of 8,577 legitimate ones, 181 were flagged.
 
-Do not insert invented metrics, sample counts, class distributions, or provenance information.
+These numbers describe this dataset only. They come from one run and one split, with no confidence interval. High scores are expected on TREC spam from 2005 to 2007 and do not show that the system detects current phishing. Model comparison and the final test-set evaluation are still to be run and recorded.
 
 ## 8. Maintenance
 
