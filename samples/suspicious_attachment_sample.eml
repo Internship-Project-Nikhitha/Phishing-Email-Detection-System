@@ -1,0 +1,17 @@
+From: Billing Department <billing@invoices.example.invalid>
+To: customer@example.com
+Subject: Invoice attached - payment overdue
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="SAMPLEBOUNDARY"
+
+--SAMPLEBOUNDARY
+Content-Type: text/plain; charset="utf-8"
+
+Your payment is overdue. Please open the attached invoice immediately.
+--SAMPLEBOUNDARY
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="invoice.pdf.exe"
+Content-Transfer-Encoding: base64
+
+VGhpcyBpcyBoYXJtbGVzcyBwbGFjZWhvbGRlciB0ZXh0LCBub3QgYSByZWFsIHByb2dyYW0u
+--SAMPLEBOUNDARY--
