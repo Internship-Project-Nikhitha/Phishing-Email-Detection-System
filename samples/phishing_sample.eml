@@ -1,0 +1,11 @@
+From: "paypal.com" <security@account-verify.example.top>
+To: customer@example.com
+Subject: URGENT: Verify your password within 24 hours!
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html><body>
+<p>Dear customer, your account has been limited. Act now to avoid suspension.</p>
+<p>Verify your password here: <a href="http://login-update.example.invalid/verify?id=1">www.paypal.example.com/login</a></p>
+<p>If you do not confirm your login details immediately your account will be closed!</p>
+</body></html>
