@@ -1,6 +1,6 @@
 # Module interfaces (the team contract)
 
-These are the public functions that exist on `main` today and that other modules rely on.
+These are the public functions that exist on `main` and that other modules rely on.
 If you must change one, tell the lead and update this file in the same pull request.
 
 ## Data records
@@ -20,7 +20,7 @@ A **cleaned record** is a dict with four string fields produced by `src/preproce
 `label_map` (CSV label text -> `phishing`/`legitimate`), `delimiter`, `encoding`, `max_rows`.
 Real config is created only after the dataset is approved (`docs/dataset-selection.md`).
 
-## Functions on `main`
+## Functions on `main` (core)
 
 | Module | Owner | Public interface |
 |---|---|---|
@@ -36,12 +36,31 @@ Real config is created only after the dataset is approved (`docs/dataset-selecti
 | `src/audit_dataset.py` | Member 1 | command line: `python -m src.audit_dataset configs/dataset.json` |
 | `scripts/check_pending.py` | Member 1 | lists unfinished PENDING / UNVERIFIED / TODO / `<FILL` markers in the dataset documents |
 
-## Planned modules (not on `main` yet)
+## Modules added in the final weeks
 
-Features (`src/features/sender.py`, `urls.py`, `text.py`, `pipeline.py`), `src/vectorize.py`, `src/models.py`,
-`src/bundle.py`, `src/explain.py`, `src/storage.py`, `src/reports.py`, `src/ingest.py`, `src/analysis_input.py`,
-`src/settings.py`, `src/service.py`, `app/api.py`, `app/streamlit_app.py`, scripts for the real runs.
-See `docs/work-distribution.md` for owners.
+| Module | Owner | Public interface |
+|---|---|---|
+| `src/features/sender.py` | Member 1 | `extract(record)`, `descriptions()` (sender address and display name features) |
+| `src/features/urls.py` | Member 2 | `extract(record)`, `descriptions()` (link features; links are never opened) |
+| `src/features/text.py` | Member 3 | `extract(record)`, `descriptions()` (wording, markup, formatting) |
+| `src/features/pipeline.py` | Member 4 | `feature_names()`, `feature_descriptions()`, `extract_all(record)`, `extract_many(records)`, `check_pipeline()` |
+| `src/vectorize.py` | Member 5 | `TextFeatures`, `EngineeredFeatures`, `FeatureBuilder` (scikit-learn transformers) |
+| `src/models.py` | Member 5 | `available_models()`, `train_model(spec, train_records, seed, params, max_features)`, `tune_model(spec, train, validation, ...)`, `evaluate_model(model, records, threshold)`, `contributions(model, record)` |
+| `src/bundle.py` | Member 5 | `ModelBundle`, `make_version`, `save_bundle(bundle, directory)`, `load_bundle(directory)` |
+| `src/explain.py` | Member 1 | `validate_thresholds`, `risk_level(score, thresholds)`, `describe_feature`, `top_indicators`, `explain(...)` |
+| `src/storage.py` | Member 2 | `connect(path)`, `init_db`, `save_analysis(...)`, `list_history`, `get_analysis`, `clear_history` |
+| `src/reports.py` | Member 2 | `sanitize_csv_cell`, `analysis_to_json`, `analysis_to_markdown`, `history_to_csv` |
+| `src/ingest.py` | Member 3 | `IngestError`, `validate_upload(filename, size)`, `parse_eml(data)`, `parse_csv_upload(data)`, `attachment_warnings(attachments)` |
+| `src/analysis_input.py` | Member 3 | `prepare_for_analysis(record)` |
+| `src/settings.py` | Member 4 | `Settings`, `SettingsError`, `load_settings(env)` |
+| `src/service.py` | Member 4 | `Predictor` (protocol), `analyze_record(...)`, `analyze_and_store(...)`, `analyze_many(records, predictor)` |
+| `src/benchmark.py` | Member 4 | `time_calls`, `measure_latency` |
+| `src/split_report.py` | Member 4 | `summarize_split(splits)`, `write_split_ids(splits, path)`, `format_quality_markdown(audit, title, records)`, `count_removed(dedup)` |
+| `app/api.py` | Member 4 | FastAPI app: `/health`, `/analyze`, `/history`, `/history.csv`, `/report/{id}` |
+| `app/streamlit_app.py` | Member 5 | web interface (`streamlit run app/streamlit_app.py`) |
+| `scripts/*.py` | see `docs/work-distribution.md` | `audit_dataset`, `make_splits`, `run_baseline`, `train`, `evaluate`, `feature_report`, `make_model_card` |
+
+The test `tests/test_contract.py` fails if a listed function disappears or is renamed.
 
 ## Safety rules for all code
 
