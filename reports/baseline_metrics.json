@@ -1,0 +1,52 @@
+{
+  "created_at": "2026-11-04T11:18:33+00:00",
+  "model": "TF-IDF (1-2 grams) + Logistic Regression (class_weight=balanced)",
+  "seed": 42,
+  "rows_read": 108685,
+  "rows_rejected": 1,
+  "duplicates_removed": 5244,
+  "label_conflicts_removed": 0,
+  "split_sizes": {
+    "train": 72406,
+    "validation": 15517,
+    "test": 15517
+  },
+  "split_summary": {
+    "train": {
+      "size": 72406,
+      "labels": {
+        "phishing": 32384,
+        "legitimate": 40022
+      }
+    },
+    "validation": {
+      "size": 15517,
+      "labels": {
+        "legitimate": 8577,
+        "phishing": 6940
+      }
+    },
+    "test": {
+      "size": 15517,
+      "labels": {
+        "phishing": 6940,
+        "legitimate": 8577
+      }
+    }
+  },
+  "evaluated_on": "validation",
+  "validation_metrics": {
+    "tp": 6784,
+    "fp": 181,
+    "tn": 8396,
+    "fn": 156,
+    "support_positive": 6940,
+    "support_negative": 8577,
+    "accuracy": 0.9782818843848682,
+    "precision": 0.9740129217516152,
+    "recall": 0.9775216138328531,
+    "f1": 0.9757641136281913,
+    "false_positive_rate": 0.0211029497493296,
+    "false_negative_rate": 0.022478386167146973
+  }
+}

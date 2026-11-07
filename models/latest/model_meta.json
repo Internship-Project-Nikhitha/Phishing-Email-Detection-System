@@ -1,0 +1,41 @@
+{
+  "created_at": "2026-11-05T08:38:39+00:00",
+  "seed": 42,
+  "dataset_config": "configs/dataset.json",
+  "ratios": [
+    0.7,
+    0.15,
+    0.15
+  ],
+  "dedup_level": "near",
+  "split_sizes": {
+    "train": 72406,
+    "validation": 15517,
+    "test": 15517
+  },
+  "split_fingerprint": "4d5d0c4b1ec69af1549ad90d1758f5980a55bbbd338a1b507bffcf56d38174b5",
+  "mode": "combined",
+  "params": {
+    "C": 10.0
+  },
+  "threshold": 0.5,
+  "engineered_feature_count": 33,
+  "total_feature_count": 20033,
+  "validation_metrics": {
+    "tp": 6822,
+    "fp": 155,
+    "tn": 8422,
+    "fn": 118,
+    "support_positive": 6940,
+    "support_negative": 8577,
+    "accuracy": 0.9824063929883353,
+    "precision": 0.9777841479145765,
+    "recall": 0.9829971181556196,
+    "f1": 0.9803837033843501,
+    "false_positive_rate": 0.01807158680191209,
+    "false_negative_rate": 0.017002881844380403
+  },
+  "evaluated_on": "validation (test split untouched)",
+  "version": "logreg_combined-20261105T083839Z",
+  "model_name": "logreg_combined"
+}
