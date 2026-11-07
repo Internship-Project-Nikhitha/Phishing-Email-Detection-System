@@ -2,7 +2,7 @@
 
 A Python-based cybersecurity internship project that builds the foundations for detecting phishing emails. The project currently supports email-record validation, configurable CSV dataset loading, duplicate analysis, and leakage-aware train/validation/test splitting.
 
-The project is under active development. A verified real-world dataset and a trained, evaluated baseline classifier are not yet documented as completed.
+The project is under active development. MeAJOR v2.0 is selected for restricted educational use with documented limitations; a trained, evaluated baseline classifier is not yet documented as completed.
 
 ## Current implementation status
 
@@ -16,7 +16,7 @@ The project is under active development. A verified real-world dataset and a tra
 | Duplicate removal with conflict reporting | Implemented |
 | Train/validation/test splitting with duplicate-group protection | Implemented |
 | Combined dataset preparation workflow | Implemented |
-| Verified dataset selection and licence review | Pending |
+| Dataset selection and restricted educational-use decision | Documented; upstream content rights remain unresolved |
 | Baseline machine-learning model and real-data evaluation | Pending |
 
 Implementation status describes available code, not proof that a complete end-to-end experiment has been performed.
@@ -116,7 +116,7 @@ The precise accepted label variants are defined by `src/preprocessing.py`. A dat
 
 The project must use a dataset whose source, licence, permitted use, schema, and labeling methodology have been checked.
 
-The [dataset card](docs/dataset-card.md) records the current candidate and unresolved checks. See the [dataset research](docs/dataset-research.md), [candidate comparison](docs/dataset-candidates.md), and [dataset selection decision](docs/dataset-selection.md) before selecting or using a corpus. Complete pending verification before reporting dataset statistics or model performance.
+The [dataset card](docs/dataset-card.md) and [dataset selection decision](docs/dataset-selection.md) document the team lead's 2026-11-04 restricted educational-use decision for MeAJOR v2.0 and its limitations. The deposit's CC BY 4.0 declaration does not establish rights to every included email; this project decision is not legal clearance. Any statistics must identify the actual release and preserve the label and source limitations below.
 
 Do not invent dataset sizes, class distributions, provenance, or evaluation results.
 
@@ -130,8 +130,10 @@ the content-safe quality audit with its JSON config:
 ```
 
 The report contains counts and quality indicators only; it does not print email
-text or fetch URLs. This audit does not approve dataset rights or label
-semantics. No dataset is currently cleared for project use.
+text or fetch URLs. This audit does not establish dataset rights or label
+semantics. MeAJOR v2.0 is selected for the restricted educational use
+documented in [dataset-selection.md](docs/dataset-selection.md); it is not
+cleared for redistribution or commercial use.
 
 ## Setup
 

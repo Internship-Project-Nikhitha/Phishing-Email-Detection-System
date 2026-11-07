@@ -13,6 +13,7 @@
 - **File to download:** the CSV file on the Zenodo record (191,121,228 bytes, MD5 `aa8f59e96787cbd696c0b650e5400dc9` as recorded in `dataset-candidates.md`)
 - **Save it as:** `data/raw/meajor_v2.csv` (this folder is git-ignored; never commit the file)
 - **Download date:** 2026-11-04
+- **Local verification:** re-downloaded from the official Zenodo file URL on 2026-11-07; verified size 191,121,228 bytes and MD5 `aa8f59e96787cbd696c0b650e5400dc9`.
 
 ## Why this one
 
@@ -26,7 +27,7 @@ Approved by the team lead on 2026-11-04 **for use in this educational, non-comme
 - Written clarification from the dataset authors and upstream corpus owners was **not** obtained. The CC BY 4.0 declaration is on the Zenodo deposit; it does not prove the depositors' rights over every email. This is a project decision, not legal advice.
 - Reports and the presentation must call the classes **"benign" and "phishing/spam (MeAJOR label 1)"**. The v2.0 release contains only TREC 2005, 2006 and 2007 emails, so label 1 is the TREC spam-labelled mail. It is not a collection of verified phishing emails. Do not claim that results measure phishing detection in general.
 - The emails come from the TREC 2005 to 2007 spam corpora. Results do not promise the same performance on current email.
-- Sender and receiver addresses in MeAJOR are hashed, so the `sender` column is **not** mapped. The sender features will have little signal on this dataset. State this in `docs/limitations.md`.
+- Sender and receiver addresses in MeAJOR are hashed, so the `sender` column is **not** mapped. The sender features are all zero on this dataset; see [limitations](limitations.md).
 - The paper reports 135,894 emails after cleaning; the Zenodo release has 108,685. No public explanation was found. We use the Zenodo release as published and report what we actually loaded.
 
 ## What the download check found (2026-11-04)
