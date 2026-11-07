@@ -39,6 +39,7 @@ def test_markdown_lists_every_feature_with_its_meaning():
     for name in pipeline.feature_names():
         assert f"| {name} |" in text
     assert f"from {len(train)} training emails" in text
+    assert "Class names follow the mapping in `configs/dataset.json`" in text
 
 
 def test_main_writes_the_report(tmp_path, monkeypatch):
