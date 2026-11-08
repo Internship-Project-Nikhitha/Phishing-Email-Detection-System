@@ -42,11 +42,11 @@ def show_result(result: dict) -> None:
     columns[2].metric("Score", f"{result['score']:.2f}")
     for warning in result.get("warnings", []):
         st.warning(warning)
-    if result["indicators"]:
+    if result["indicators"] and result["risk_level"] != "low":
         st.subheader("Warning indicators")
         st.table([{"Indicator": i["feature"], "Why it matters": i["description"], "Contribution": i["contribution"]} for i in result["indicators"]])
     else:
-        st.info("No indicators pointed toward phishing.")
+        st.info("No strong indicators. The score is low, so no single feature stood out.")
     conn = storage.connect(settings.db_path)
     try:
         analysis = storage.get_analysis(conn, result["id"])
