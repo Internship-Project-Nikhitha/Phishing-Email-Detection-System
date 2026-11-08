@@ -1,6 +1,6 @@
 # Evidence index
 
-Where a reviewer can verify each Qveto deliverable. Status is as of 2026-10-27; update a row only after you
+Where a reviewer can verify each Qveto deliverable. Status is as of the final integration; update a row only after you
 ran its command and saw it pass.
 
 | Deliverable | Where | Command / how to verify | Status |
@@ -14,7 +14,9 @@ ran its command and saw it pass.
 | Leakage-safe split + fingerprint | `src/splitting.py`, `src/data_prep.py` | `python -m pytest tests/test_splitting.py tests/test_data_prep.py tests/test_data_prep_dedupe.py` | Done (code); real split report *(pending dataset)* |
 | Metrics + baseline | `src/metrics.py`, `src/baseline.py` | `python -m pytest tests/test_metrics.py tests/test_baseline.py` | Done (code); real baseline report *(pending dataset)* |
 | Feature registry | `src/features/base.py` | `python -m pytest tests/test_features_base.py` | Done |
-| Sender / URL / text features | `src/features/` | | *(pending)* |
-| Model comparison, model card | `reports/`, `docs/model-card.md` | | *(pending)* |
-| Explanations, history, upload validation, API, web app | | | *(pending)* |
+| Sender / URL / text features + pipeline | `src/features/` | `python -m pytest tests/test_features_*.py` | Done |
+| Vectorizers, models, saved bundle | `src/vectorize.py`, `src/models.py`, `src/bundle.py` | `python -m pytest tests/test_vectorize.py tests/test_models.py tests/test_bundle.py` | Done (code); `reports/model_comparison.md`, `docs/model-card.md` *(pending real run)* |
+| Explanations, history, upload validation | `src/explain.py`, `src/storage.py`, `src/ingest.py`, `src/service.py` | `python -m pytest tests/test_explain.py tests/test_storage.py tests/test_ingest.py tests/test_service.py` | Done |
+| API and web app | `app/api.py`, `app/streamlit_app.py` | `python -m pytest tests/test_api.py` (needs fastapi, httpx) | Done (API); web app is manual: `streamlit run app/streamlit_app.py` |
+| Safety and robustness tests | `tests/test_safety.py`, `tests/test_robustness.py`, `docs/safety.md` | `python -m pytest tests/test_safety.py tests/test_robustness.py` | Done |
 | Final evaluation and test log | `reports/final_evaluation.md`, `reports/test_log.txt` | | *(pending)* |
